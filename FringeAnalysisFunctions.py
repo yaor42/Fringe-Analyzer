@@ -5,6 +5,7 @@ import scipy.ndimage
 import cv2
 from skimage.restoration import unwrap_phase
 from mpl_toolkits import mplot3d
+import os
 
 
 def testImage(pitch=20, dim0=1000, dim1=1250, imgName='fringe_test.png'):
@@ -105,7 +106,7 @@ def centralDiff2(array1, array2, array3, dt):
     deri = (array3 - 2*array2 + array1) / dt**2
     return deri
 
-def fileNameGen(prefix, index, fileType):
+def fileNameGen(prefix, index, fileType, folderName=''):
     """Generate file name based on the prefix and index number"""
     if index < 10:
         fileName = prefix + str(index) + '.' + fileType
@@ -115,6 +116,11 @@ def fileNameGen(prefix, index, fileType):
         fileName = prefix[:-2] + str(index) + '.' + fileType
     else:
         fileName = prefix[:-3] + str(index) + '.' + fileType
+    
+    if folderName != '':
+        fileName = os.path.join(os.getcwd(), folderName, fileName);
+    # print(fileName)
+
     return fileName
 
 def maskCircle_2(img, minRadius=10, maxRadius=40, color=(0,0,0)):
