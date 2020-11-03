@@ -26,6 +26,7 @@ def testImage(pitch=20, dim0=1000, dim1=1250, imgName='fringe_test.png'):
     # plt.show()
     return im
 
+
 def testSlopeImage(pitch=20, dim0=1000, dim1=1250, slope=0.1, imgName='slope.png'):
     """Generate and save a test slope fringe image
         pitch: period of cosine function in px
@@ -46,6 +47,7 @@ def testSlopeImage(pitch=20, dim0=1000, dim1=1250, slope=0.1, imgName='slope.png
     # plt.show()
     return im
 
+
 def getPitch(img):
     """Get the pitch of the reference image
         img: ndarray that contains the image 
@@ -53,17 +55,17 @@ def getPitch(img):
         return: pitch as an integer
     """
     dim0, dim1 = img.shape
-    row = img[int(dim0/2), :]
+    row = img[int(dim0 / 2), :]
     # plt.plot(row)
     # plt.show()
     yf = scipy.fftpack.fft(row)
     yfMag = 2 / dim1 * np.abs(yf[:int(dim1 / 2)])
-    xf = np.linspace(0, 0.5, int(dim1/2))
+    xf = np.linspace(0, 0.5, int(dim1 / 2))
     maxIndex = np.argmax(yfMag[3:])
     # plt.plot(xf, yfMag)
     # plt.show()
-    
-    return int(1/xf[maxIndex])
+
+    return int(1 / xf[maxIndex])
 
 
 def imgNormalize(img, pitch):
@@ -76,22 +78,23 @@ def fiveStepShift(img, pitch, maskHoles=False):
         img: ndarray that contains the image
         pitch: pitch of the reference image in integer
 
-        retune: phase map with dtype of float64
+        return: phase map with dtype of float64
     """
     if maskHoles:
         img = maskCircle(img)
 
     img = img.astype(np.float64)
-    img1 = scipy.ndimage.shift(img, (0, -pitch/2))
-    img2 = scipy.ndimage.shift(img, (0, -pitch/4))
+    img1 = scipy.ndimage.shift(img, (0, -pitch / 2))
+    img2 = scipy.ndimage.shift(img, (0, -pitch / 4))
     img3 = img
-    img4 = scipy.ndimage.shift(img, (0, pitch/4))
-    img5 = scipy.ndimage.shift(img, (0, pitch/2))
+    img4 = scipy.ndimage.shift(img, (0, pitch / 4))
+    img5 = scipy.ndimage.shift(img, (0, pitch / 2))
     # phase = np.arctan(2*(img2 - img4) / (2*img3 - img5 - img1))
-    phase = np.arctan2(2*(img2 - img4), 2*img3 - img5 - img1)
+    phase = np.arctan2(2 * (img2 - img4), 2 * img3 - img5 - img1)
     # plt.imshow(img1, cmap='gray')
     # plt.show()
     return phase
+
 
 def centralDiff(array1, array2, array3, dt):
     """Calculate the derivative using central difference
@@ -99,11 +102,13 @@ def centralDiff(array1, array2, array3, dt):
     deri = (array3 - array1) / 2 / dt
     return deri
 
+
 def centralDiff2(array1, array2, array3, dt):
     """Calculate the derivative using central difference
     """
-    deri = (array3 - 2*array2 + array1) / dt**2
+    deri = (array3 - 2 * array2 + array1) / dt ** 2
     return deri
+
 
 def fileNameGen(prefix, index, fileType):
     """Generate file name based on the prefix and index number"""
@@ -117,7 +122,8 @@ def fileNameGen(prefix, index, fileType):
         fileName = prefix[:-3] + str(index) + '.' + fileType
     return fileName
 
-def maskCircle_2(img, minRadius=10, maxRadius=40, color=(0,0,0)):
+
+def maskCircle_2(img, minRadius=10, maxRadius=40, color=(0, 0, 0)):
     """Detect circular holes in the image and mask with color"""
     circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, 1, 100,
                                param1=100, param2=30,
@@ -130,6 +136,7 @@ def maskCircle_2(img, minRadius=10, maxRadius=40, color=(0,0,0)):
             radius = int(i[2] * 1.1)
             cv2.circle(img, center, radius, color, -1)
     return img
+
 
 def maskCircle(img, minRadius=10, maxRadius=40, maskRadiusFactor=1.2):
     """Detect circular holes in the image and mask the holes
@@ -147,11 +154,11 @@ def maskCircle(img, minRadius=10, maxRadius=40, maskRadiusFactor=1.2):
             radius = int(i[2] * maskRadiusFactor)
             cv2.circle(mask, center, radius, 1, -1)
 
-    
-    mask=(mask>0).tolist()
+    mask = (mask > 0).tolist()
     mask = np.asarray(mask)
     maskedImg = np.ma.array(img, mask=mask)
     return maskedImg
+
 
 def unwrapPhase(diffPhase):
     """Unwrap phase"""
