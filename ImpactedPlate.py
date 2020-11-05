@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import time as t
 from FringeAnalysisFunctions import *
 
 
@@ -12,6 +13,8 @@ plt.show()
 pitch = getPitch(refImg)
 print('Pitch: '+str(pitch))
 
+phaseRef = fiveStepShift(refImg, pitch, maskHoles=False)
+
 pointA = []
 pointB = []
 pointC = []
@@ -19,13 +22,15 @@ pointD = []
 pointE = []
 time = []
 
+tic = t.perf_counter()
+
 ks = 5.7325
 prefix = 'S000400000'
 for i in range(27, 1937):
     fileName = fileNameGen(prefix, i, 'jpg', 'S0004')
     objImg = cv2.imread(fileName, 0)
-    
-    phaseRef = fiveStepShift(refImg, pitch, maskHoles=False)
+
+    # phaseRef = fiveStepShift(refImg, pitch, maskHoles=False)
     phaseObj = fiveStepShift(objImg, pitch, maskHoles=False)
 
     diffPhase = phaseObj - phaseRef
@@ -44,6 +49,10 @@ for i in range(27, 1937):
     pointE.append(np.average(unwrappedPhaseMap[260:270, 260:270]))
     print('Processed frame: '+str(i))
 
+toc = t.perf_counter()
+print(f"Takes {toc - tic:0.4f} seconds")
+
+print(pointA)
 
 plt.plot(time, pointA)
 plt.plot(time, pointB)
