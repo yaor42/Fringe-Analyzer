@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, askopenfilenames
 from FringeAnalysisFunctions import *
 import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
@@ -104,7 +104,7 @@ class FringeGUI:
         self.frm_down_left.grid(row=1, column=0, padx=5, pady=5)
         self.frm_down_right.grid(row=1, column=1, padx=5, pady=5)
 
-        self.window.resizable(False, False)
+        # self.window.resizable(False, False)
 
     def select_files(self):
         self.ref_file = askopenfilename(
@@ -130,6 +130,20 @@ class FringeGUI:
                 ("All Files", "*.*")
             ]
         )
+
+        # self.obj_file = askopenfiles(
+        #     title="Select object image",
+        #     filetypes=[
+        #         ("JPEG files", ".jpeg .jpg .jpe"),
+        #         ("JPEG 200 files", ".jp2"),
+        #         ("Windows bitmaps", ".bmp .dib"),
+        #         ("Portable Network Graphics", ".png"),
+        #         ("TIFF files", ".tiff .tif"),
+        #         ("All Files", "*.*")
+        #     ]
+        # )
+
+        print(self.obj_file)
 
         self.analyze()
 
@@ -172,9 +186,9 @@ class FringeGUI:
         self.canvas_main.draw()
 
     def onclick_main(self, event):
-        # print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-        #       ('double' if event.dblclick else 'single', event.button,
-        #        event.x, event.y, event.xdata, event.ydata))
+        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+              ('double' if event.dblclick else 'single', event.button,
+               event.x, event.y, event.xdata, event.ydata))
         if event.button == 1:
             x = self.depth_map[event.x, :]
             y = self.depth_map[:, event.y]
