@@ -104,7 +104,7 @@ class FringeGUI:
         self.frm_down_left.grid(row=1, column=0, padx=5, pady=5)
         self.frm_down_right.grid(row=1, column=1, padx=5, pady=5)
 
-        # self.window.resizable(False, False)
+        self.window.resizable(False, False)
 
     def select_files(self):
         self.ref_file = askopenfilename(
