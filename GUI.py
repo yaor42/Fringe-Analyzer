@@ -11,8 +11,15 @@ from matplotlib.figure import Figure
 
 matplotlib.use('TkAgg')
 
+""" A GUI module for the Fringe Analysis 
+    
+
+"""
+
 
 class FileSelectionGui:
+    is_valid = False
+
     ref_file = None
     obj_file = None
 
@@ -32,22 +39,32 @@ class FileSelectionGui:
         self.lbl_ref_img = tk.Label(master=self.frm_left, image=self.ref_img)
         self.lbl_obj_img = tk.Label(master=self.frm_right, image=self.obj_img)
 
-        self.btn_ref = tk.Button(master=self.frm_left, text="Open..", command=self.select_ref_image)
-        self.btn_obj = tk.Button(master=self.frm_right, text="Open..", command=self.select_obj_image)
+        self.scl_obj = tk.Scale(master=self.window, command=self.redraw_obj, orient=tk.HORIZONTAL)
 
-        self.scl_obj = tk.Scale(master=self.frm_right, command=self.redraw_obj, orient=tk.HORIZONTAL)
+        self.btn_ref = tk.Button(master=self.window, text="Open..", command=self.select_ref_image)
+        self.btn_obj = tk.Button(master=self.window, text="Open..", command=self.select_obj_image)
 
         self.lbl_ref.pack()
         self.lbl_ref_img.pack()
-        self.btn_ref.pack()
 
         self.lbl_obj.pack()
         self.lbl_obj_img.pack()
-        self.btn_obj.pack()
-        self.scl_obj.pack()
 
         self.frm_left.grid(row=0, column=0)
         self.frm_right.grid(row=0, column=1)
+        self.scl_obj.grid(row=1, column=1)
+        self.btn_ref.grid(row=2, column=0)
+        self.btn_obj.grid(row=2, column=1)
+
+        self.frm_button = tk.Frame(master=self.window)
+
+        self.btn_submit = tk.Button(master=self.frm_button, text="Submit", command=self.check_and_submit)
+        self.btn_cancel = tk.Button(master=self.frm_button, text="Cancel", command=self.cancel)
+
+        self.btn_submit.grid(row=0, column=1, ipadx=5, padx=5, pady=5)
+        self.btn_cancel.grid(row=0, column=0, ipadx=5, padx=5, pady=5)
+
+        self.frm_button.grid(row=3, column=1)
 
     def select_ref_image(self):
         self.ref_file = askopenfilename(
@@ -93,6 +110,20 @@ class FileSelectionGui:
         self.obj_img = ImageTk.PhotoImage(Image.open(self.obj_file[self.scl_obj.get() - 1]).resize((200, 200)))
         self.lbl_obj_img.configure(image=self.obj_img)
 
+    def check_and_submit(self):
+        if self.obj_file is not None or self.ref_file is not None:
+            self.is_valid = True
+            self.window.destroy()
+        else:
+            self.is_valid = False
+            tk.messagebox.showerror(title="Invalid Input", message="Input is not valid!")
+
+    def cancel(self):
+        self.obj_file = None
+        self.ref_file = None
+        self.is_valid = False
+        self.window.destroy()
+
 
 class FringeGUI:
     ref_file = None
@@ -113,63 +144,11 @@ class FringeGUI:
     max_value = None
     min_value = None
 
+    ax_added = False
+
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Fringe Analysis Prototype")
-
-        self.frm_figs = tk.Frame(master=self.window)
-
-        self.frm_figs.rowconfigure(0, weight=4)
-        self.frm_figs.rowconfigure(1, weight=1, minsize=200)
-        self.frm_figs.columnconfigure(1, weight=1, minsize=200)
-        self.frm_figs.columnconfigure(2, weight=4)
-
-        self.frm_upper_left = tk.Frame(master=self.frm_figs)
-        self.frm_upper_right = tk.Frame(master=self.frm_figs)
-        self.frm_down_left = tk.Frame(master=self.frm_figs)
-        self.frm_down_right = tk.Frame(master=self.frm_figs)
-
-        self.cbo_map = ttk.Combobox(
-            self.frm_upper_right,
-            value=[
-                'Object Surface Contour',
-                'Quality Map',
-                'Wrapped Phase Map',
-                'Object Image',
-                'Reference Image'
-            ]
-        )
-        self.cbo_map.current(0)
-
-        self.btn_show = tk.Button(self.frm_upper_right, text='Show', command=self.draw)
-
-        self.cbo_map.pack(side=tk.TOP)
-        self.btn_show.pack(side=tk.BOTTOM)
-
-        self.fig_upper = Figure(figsize=(5, 3))
-        self.fig_right = Figure(figsize=(3, 5))
-        self.fig_main = Figure(figsize=(5, 5))
-
-        self.fig_upper.patch.set_facecolor('#F0F0F0')
-        self.fig_right.patch.set_facecolor('#F0F0F0')
-        self.fig_main.patch.set_facecolor('#F0F0F0')
-
-        self.canvas_upper = FigureCanvasTkAgg(self.fig_upper, master=self.frm_upper_left)
-        self.canvas_right = FigureCanvasTkAgg(self.fig_right, master=self.frm_down_right)
-        self.canvas_main = FigureCanvasTkAgg(self.fig_main, master=self.frm_down_left)
-
-        self.canvas_upper.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.canvas_right.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.canvas_main.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-        self.ax_upper = self.fig_upper.add_subplot(111)
-        self.ax_right = self.fig_right.add_subplot(111)
-        self.ax_main = self.fig_main.add_subplot(111)
-
-        self.frm_figs.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-        self.scl_main = tk.Scale(master=self.frm_figs, command=self.draw, orient=tk.HORIZONTAL)
-        self.scl_main.grid(row=2, column=1, stick='ew')
 
         self.menu_bar = tk.Menu(master=self.window)
         self.menu_file = tk.Menu(master=self.menu_bar, tearoff=0)
@@ -185,10 +164,77 @@ class FringeGUI:
 
         self.window.config(menu=self.menu_bar)
 
-        self.frm_upper_left.grid(row=0, column=1, padx=5, pady=5)
-        self.frm_upper_right.grid(row=0, column=2, padx=5, pady=5)
-        self.frm_down_left.grid(row=1, column=1, padx=5, pady=5)
-        self.frm_down_right.grid(row=1, column=2, padx=5, pady=5)
+        self.frm_figs = tk.Frame(master=self.window)
+
+        self.frm_figs.rowconfigure(0, weight=4)
+        self.frm_figs.rowconfigure(1, weight=1, minsize=200)
+        self.frm_figs.columnconfigure(1, weight=1, minsize=200)
+        self.frm_figs.columnconfigure(2, weight=4)
+
+        self.frm_center_upper = tk.Frame(master=self.frm_figs)
+        self.frm_right_upper = tk.Frame(master=self.frm_figs)
+        self.frm_center_lower = tk.Frame(master=self.frm_figs)
+        self.frm_right_lower = tk.Frame(master=self.frm_figs)
+        self.frm_left_lower = tk.Frame(master=self.frm_figs)
+
+        self.cbo_map = ttk.Combobox(
+            self.frm_right_upper,
+            value=[
+                'Object Surface Contour',
+                'Quality Map',
+                'Wrapped Phase Map',
+                'Object Phase',
+                'Reference Phase'
+            ]
+        )
+        self.cbo_map.current(0)
+
+        self.btn_show = tk.Button(self.frm_right_upper, text='Show', command=self.draw)
+
+        self.cbo_map.pack(side=tk.TOP)
+        self.btn_show.pack(side=tk.BOTTOM)
+
+        self.fig_upper = Figure(figsize=(5, 3))
+        self.fig_right = Figure(figsize=(3, 5))
+        self.fig_main = Figure(figsize=(5, 5))
+        self.fig_left = Figure(figsize=(1, 5))
+
+        self.fig_upper.patch.set_facecolor('#F0F0F0')
+        self.fig_right.patch.set_facecolor('#F0F0F0')
+        self.fig_main.patch.set_facecolor('#F0F0F0')
+        self.fig_left.patch.set_facecolor('#F0F0F0')
+
+        self.canvas_upper = FigureCanvasTkAgg(self.fig_upper, master=self.frm_center_upper)
+        self.canvas_right = FigureCanvasTkAgg(self.fig_right, master=self.frm_right_lower)
+        self.canvas_main = FigureCanvasTkAgg(self.fig_main, master=self.frm_center_lower)
+        self.canvas_left = FigureCanvasTkAgg(self.fig_left, master=self.frm_left_lower)
+
+        self.canvas_upper.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas_right.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas_main.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas_left.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        self.ax_upper = None
+        self.ax_right = None
+        self.ax_main = None
+        self.ax_left = None
+
+        # self.frm_center_upper.grid(row=0, column=1, padx=5, pady=5)
+        # self.frm_right_upper.grid(row=0, column=2, padx=5, pady=5)
+        # self.frm_center_lower.grid(row=1, column=1, padx=5, pady=5)
+        # self.frm_right_lower.grid(row=1, column=2, padx=5, pady=5)
+        # self.frm_left_lower.grid(row=1, column=0, padx=5, pady=5)
+
+        self.frm_center_upper.grid(row=0, column=1)
+        self.frm_right_upper.grid(row=0, column=2)
+        self.frm_center_lower.grid(row=1, column=1)
+        self.frm_right_lower.grid(row=1, column=2)
+        self.frm_left_lower.grid(row=1, column=0)
+
+        self.scl_main = tk.Scale(master=self.frm_figs, command=self.draw, orient=tk.HORIZONTAL)
+        self.scl_main.grid(row=2, column=1, stick='ew')
+
+        self.frm_figs.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.window.resizable(False, False)
 
@@ -197,12 +243,13 @@ class FringeGUI:
 
         self.window.wait_window(file_gui.window)
 
-        self.ref_file = file_gui.ref_file
-        self.obj_file = file_gui.obj_file
+        if file_gui.is_valid:
+            self.ref_file = file_gui.ref_file
+            self.obj_file = file_gui.obj_file
 
-        self.scl_main.configure(from_=1, to=len(self.obj_file))
+            self.analyze()
 
-        self.analyze()
+            self.scl_main.configure(from_=1, to=len(self.obj_file))
 
     def analyze(self):
         self.window.title("Fringe Analysis Prototype - Reading")
@@ -228,7 +275,9 @@ class FringeGUI:
 
         self.window.title("Fringe Analysis Prototype - Done")
 
-        self.draw()
+        # print("Analyze")
+
+        # self.draw()
 
     def draw(self, _=None):
         if self.obj_file is None:
@@ -237,24 +286,40 @@ class FringeGUI:
         selected_map = self.cbo_map.get()
 
         if selected_map == 'Object Surface Contour':
-            self.curr_map = self.depth_map[0]
+            self.curr_map = self.depth_map[self.scl_main.get() - 1]
         elif selected_map == 'Quality Map':
             return
         elif selected_map == 'Wrapped Phase Map':
-            self.curr_map = self.diff_phase[0]
-        elif selected_map == 'Object Image':
-            self.curr_map = self.obj_phase[0]
-        elif selected_map == 'Reference Image':
+            self.curr_map = self.diff_phase[self.scl_main.get() - 1]
+        elif selected_map == 'Object Phase':
+            self.curr_map = self.obj_phase[self.scl_main.get() - 1]
+        elif selected_map == 'Reference Phase':
             self.curr_map = self.ref_phase
 
         self.max_value = max([max(i) for i in self.curr_map])
         self.min_value = min([min(i) for i in self.curr_map])
 
+        if not self.ax_added:
+            self.ax_added = True
+            self.ax_upper = self.fig_upper.add_subplot(111)
+            self.ax_right = self.fig_right.add_subplot(111)
+            self.ax_main = self.fig_main.add_subplot(111)
+            self.ax_left = self.fig_left.add_axes([0.45, 0.1, 0.1, 0.8])
+
+            self.canvas_upper.draw()
+            self.canvas_right.draw()
+        else:
+            self.ax_left.remove()
+            self.ax_left = self.fig_left.add_axes([0.45, 0.1, 0.1, 0.8])
+
         self.canvas_main.mpl_connect('button_press_event', self.onclick_main)
 
-        self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
+        plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
+
+        self.fig_left.colorbar(plot, cax=self.ax_left)
 
         self.canvas_main.draw()
+        self.canvas_left.draw()
 
     def onclick_main(self, event):
         print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
