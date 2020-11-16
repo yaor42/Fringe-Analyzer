@@ -1,13 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter.filedialog import askopenfilename, askopenfilenames
-from PIL import Image, ImageTk
 from FringeAnalysisFunctions import *
 import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from concurrent import futures
+from FileSelectionGUI import FileSelectionGui
+from Settings import Settings
 
 matplotlib.use('TkAgg')
 
@@ -15,114 +16,6 @@ matplotlib.use('TkAgg')
     
 
 """
-
-
-class FileSelectionGui:
-    is_valid = False
-
-    ref_file = None
-    obj_file = None
-
-    def __init__(self, root):
-        self.window = tk.Toplevel(root)
-        self.window.title('Image Selection')
-
-        self.frm_left = tk.Frame(master=self.window)
-        self.frm_right = tk.Frame(master=self.window)
-
-        self.lbl_ref = tk.Label(master=self.frm_left, text='Select reference image: ')
-        self.lbl_obj = tk.Label(master=self.frm_right, text='Select object images: ')
-
-        self.ref_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
-        self.obj_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
-
-        self.lbl_ref_img = tk.Label(master=self.frm_left, image=self.ref_img)
-        self.lbl_obj_img = tk.Label(master=self.frm_right, image=self.obj_img)
-
-        self.scl_obj = tk.Scale(master=self.window, command=self.redraw_obj, orient=tk.HORIZONTAL)
-
-        self.btn_ref = tk.Button(master=self.window, text="Open..", command=self.select_ref_image)
-        self.btn_obj = tk.Button(master=self.window, text="Open..", command=self.select_obj_image)
-
-        self.lbl_ref.pack()
-        self.lbl_ref_img.pack()
-
-        self.lbl_obj.pack()
-        self.lbl_obj_img.pack()
-
-        self.frm_left.grid(row=0, column=0)
-        self.frm_right.grid(row=0, column=1)
-        self.scl_obj.grid(row=1, column=1)
-        self.btn_ref.grid(row=2, column=0)
-        self.btn_obj.grid(row=2, column=1)
-
-        self.frm_button = tk.Frame(master=self.window)
-
-        self.btn_submit = tk.Button(master=self.frm_button, text="Submit", command=self.check_and_submit)
-        self.btn_cancel = tk.Button(master=self.frm_button, text="Cancel", command=self.cancel)
-
-        self.btn_submit.grid(row=0, column=1, ipadx=5, padx=5, pady=5)
-        self.btn_cancel.grid(row=0, column=0, ipadx=5, padx=5, pady=5)
-
-        self.frm_button.grid(row=3, column=1)
-
-    def select_ref_image(self):
-        self.ref_file = askopenfilename(
-            title="Select reference image",
-            filetypes=[
-                ("JPEG files", ".jpeg .jpg .jpe"),
-                ("JPEG 200 files", ".jp2"),
-                ("Windows bitmaps", ".bmp .dib"),
-                ("Portable Network Graphics", ".png"),
-                ("TIFF files", ".tiff .tif"),
-                ("All Files", "*.*")
-            ]
-        )
-
-        self.ref_img = ImageTk.PhotoImage(Image.open(self.ref_file).resize((200, 200)))
-        self.lbl_ref_img.configure(image=self.ref_img)
-
-        self.window.lift()
-
-    def select_obj_image(self):
-        self.obj_file = askopenfilenames(
-            title="Select reference image",
-            filetypes=[
-                ("JPEG files", ".jpeg .jpg .jpe"),
-                ("JPEG 200 files", ".jp2"),
-                ("Windows bitmaps", ".bmp .dib"),
-                ("Portable Network Graphics", ".png"),
-                ("TIFF files", ".tiff .tif"),
-                ("All Files", "*.*")
-            ]
-        )
-
-        self.obj_img = ImageTk.PhotoImage(Image.open(self.obj_file[0]).resize((200, 200)))
-        self.lbl_obj_img.configure(image=self.obj_img)
-        self.scl_obj.configure(from_=1, to=len(self.obj_file))
-
-        self.window.lift()
-
-    def redraw_obj(self, _=None):
-        if self.obj_file is None:
-            return
-
-        self.obj_img = ImageTk.PhotoImage(Image.open(self.obj_file[self.scl_obj.get() - 1]).resize((200, 200)))
-        self.lbl_obj_img.configure(image=self.obj_img)
-
-    def check_and_submit(self):
-        if self.obj_file is not None or self.ref_file is not None:
-            self.is_valid = True
-            self.window.destroy()
-        else:
-            self.is_valid = False
-            tk.messagebox.showerror(title="Invalid Input", message="Input is not valid!")
-
-    def cancel(self):
-        self.obj_file = None
-        self.ref_file = None
-        self.is_valid = False
-        self.window.destroy()
 
 
 class FringeGUI:
@@ -146,6 +39,11 @@ class FringeGUI:
 
     ax_added = False
 
+    using_multithreading = False
+    number_of_threads = 0
+
+    using_hole_masks = False
+
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Fringe Analysis Prototype")
@@ -156,6 +54,8 @@ class FringeGUI:
 
         self.menu_file.add_command(label="Open..", command=self.select_files)
         self.menu_file.add_command(label="Calibration", command=None)
+        self.menu_file.add_separator()
+        self.menu_file.add_command(label="Settings", command=self.change_settings)
         self.menu_file.add_separator()
         self.menu_file.add_command(label="Exit", command=self.window.quit)
 
@@ -231,15 +131,43 @@ class FringeGUI:
         self.frm_right_lower.grid(row=1, column=2)
         self.frm_left_lower.grid(row=1, column=0)
 
-        self.scl_main = tk.Scale(master=self.frm_figs, command=self.draw, orient=tk.HORIZONTAL)
+        self.scl_main = tk.Scale(master=self.frm_figs, from_=1, command=self.draw, orient=tk.HORIZONTAL)
         self.scl_main.grid(row=2, column=1, stick='ew')
+
+        self.btn_next_pic = tk.Button(master=self.frm_figs, command=self.next_pic, text="->")
+        self.btn_prev_pic = tk.Button(master=self.frm_figs, command=self.prev_pic, text="<-")
+
+        self.btn_next_pic.grid(row=2, column=2, stick='w')
+        self.btn_prev_pic.grid(row=2, column=0, stick='e')
 
         self.frm_figs.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.window.resizable(False, False)
 
+    def next_pic(self):
+        temp = self.scl_main.get()
+
+        if temp + 1 <= self.scl_main["to"]:
+            self.scl_main.set(temp + 1)
+
+    def prev_pic(self):
+        temp = self.scl_main.get()
+
+        if temp - 1 >= 1:
+            self.scl_main.set(temp - 1)
+
+    def change_settings(self):
+        setting_gui = Settings(self)
+
+        self.window.wait_window(setting_gui.window)
+
+        if setting_gui.is_valid:
+            self.using_multithreading = setting_gui.using_multithreading
+            self.number_of_threads = setting_gui.number_of_threads
+            self.using_hole_masks = setting_gui.using_hole_masks
+
     def select_files(self):
-        file_gui = FileSelectionGui(self.window)
+        file_gui = FileSelectionGui(self)
 
         self.window.wait_window(file_gui.window)
 
@@ -252,32 +180,52 @@ class FringeGUI:
             self.scl_main.configure(from_=1, to=len(self.obj_file))
 
     def analyze(self):
-        self.window.title("Fringe Analysis Prototype - Reading")
-
         ref_img = cv2.imread(self.ref_file, cv2.IMREAD_GRAYSCALE)
         obj_img = [cv2.imread(f, cv2.IMREAD_GRAYSCALE) for f in self.obj_file]
 
         self.pitch = getPitch(ref_img)
 
-        self.window.title("Fringe Analysis Prototype - Calculating Five Step Shift Phase")
+        self.ref_phase = fiveStepShift(ref_img, self.pitch, maskHoles=self.using_hole_masks)
 
-        self.ref_phase = fiveStepShift(ref_img, self.pitch)
-        self.obj_phase = [fiveStepShift(img, self.pitch) for img in obj_img]
+        num_img = len(obj_img)
 
-        self.window.title("Fringe Analysis Prototype - Calculating Difference")
+        if self.using_multithreading and num_img > self.number_of_threads:
+            obj_number_per_thread = int(num_img / self.number_of_threads)
+            future_list = []
 
-        self.diff_phase = [phase - self.ref_phase for phase in self.obj_phase]
+            self.obj_phase = []
+            self.diff_phase = []
+            self.unwrapped_phase = []
+            self.depth_map = []
 
-        self.window.title("Fringe Analysis Prototype - Unwrapping")
+            with futures.ThreadPoolExecutor() as executor:
+                for i in range(self.number_of_threads):
+                    start = i * obj_number_per_thread
+                    end = (i + 1) * obj_number_per_thread if i + 1 != self.number_of_threads else num_img
 
-        self.unwrapped_phase = [unwrapPhase(phase) for phase in self.diff_phase]
-        self.depth_map = [phase * self.ks for phase in self.unwrapped_phase]
+                    future_list.append(
+                        executor.submit(
+                            analyze_phase,
+                            self.ref_phase,
+                            obj_img[start:end],
+                            self.ks,
+                            self.pitch
+                        )
+                    )
 
-        self.window.title("Fringe Analysis Prototype - Done")
-
-        # print("Analyze")
-
-        # self.draw()
+            for future in future_list:
+                obj_phase_, diff_phase_, unwrapped_phase_, depth_map_ = future.result()
+                self.obj_phase.extend(obj_phase_)
+                self.diff_phase.extend(diff_phase_)
+                self.unwrapped_phase.extend(unwrapped_phase_)
+                self.depth_map.extend(depth_map_)
+        else:
+            self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = analyze_phase(
+                self.ref_phase,
+                obj_img,
+                self.ks,
+                self.pitch
+            )
 
     def draw(self, _=None):
         if self.obj_file is None:

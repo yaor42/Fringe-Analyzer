@@ -170,3 +170,12 @@ def unwrapPhase(diffPhase):
     """Unwrap phase"""
     unwrappedPhase = unwrap_phase(diffPhase)
     return unwrappedPhase
+
+
+def analyze_phase(ref_phase, obj_img, ks, pitch):
+    obj_phase = [fiveStepShift(img, pitch) for img in obj_img]
+    diff_phase = [phase - ref_phase for phase in obj_phase]
+    unwrapped_phase = [unwrapPhase(phase) for phase in diff_phase]
+    depth_map = [phase * ks for phase in unwrapped_phase]
+
+    return obj_phase, diff_phase, unwrapped_phase, depth_map
