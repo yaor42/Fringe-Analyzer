@@ -40,41 +40,43 @@ class PlotGUI:
             antialiased=False
         )
 
-        self.cnv.mpl_connect('scroll_event', self.zoom)
+        def zoom(event):
+            print(f"Scroll Event : {event}")
 
-    def zoom(self, event):
-        cur_xlim = self.ax.get_xlim()
-        cur_ylim = self.ax.get_ylim()
-        cur_zlim = self.ax.get_zlim()
+            cur_xlim = self.ax.get_xlim()
+            cur_ylim = self.ax.get_ylim()
+            # cur_zlim = self.ax.get_zlim()
 
-        xdata = event.xdata  # get event x location
-        ydata = event.ydata  # get event y location
-        zdata = event.zdata
+            xdata = event.xdata  # get event x location
+            ydata = event.ydata  # get event y location
+            # zdata = event.zdata
 
-        if event.button == 'down':
-            # deal with zoom in
-            scale_factor = 1 / self.base_scale
-        elif event.button == 'up':
-            # deal with zoom out
-            scale_factor = self.base_scale
-        else:
-            # deal with something that should never happen
-            scale_factor = 1
-            print(event.button)
+            if event.button == 'down':
+                # deal with zoom in
+                scale_factor = 1 / self.base_scale
+            elif event.button == 'up':
+                # deal with zoom out
+                scale_factor = self.base_scale
+            else:
+                # deal with something that should never happen
+                scale_factor = 1
+                print(event.button)
 
-        new_width = (cur_xlim[1] - cur_xlim[0]) * scale_factor
-        new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
-        new_length = (cur_zlim[1] - cur_zlim[0]) * scale_factor
+            new_width = (cur_xlim[1] - cur_xlim[0]) * scale_factor
+            new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
+            # new_length = (cur_zlim[1] - cur_zlim[0]) * scale_factor
 
-        relx = (cur_xlim[1] - xdata) / (cur_xlim[1] - cur_xlim[0])
-        rely = (cur_ylim[1] - ydata) / (cur_ylim[1] - cur_ylim[0])
-        relz = (cur_zlim[1] - zdata) / (cur_zlim[1] - cur_zlim[0])
+            relx = (cur_xlim[1] - xdata) / (cur_xlim[1] - cur_xlim[0])
+            rely = (cur_ylim[1] - ydata) / (cur_ylim[1] - cur_ylim[0])
+            # relz = (cur_zlim[1]) / (cur_zlim[1] - cur_zlim[0])
 
-        self.ax.set_xlim([xdata - new_width * (1 - relx), xdata + new_width * relx])
-        self.ax.set_ylim([ydata - new_height * (1 - rely), ydata + new_height * rely])
-        self.ax.set_zlim([zdata - new_length * (1 - relz), zdata + new_length * relz])
+            self.ax.set_xlim([xdata - new_width * (1 - relx), xdata + new_width * relx])
+            self.ax.set_ylim([ydata - new_height * (1 - rely), ydata + new_height * rely])
+            # self.ax.set_zlim([- new_length * (1 - relz), new_length * relz])
 
-        self.cnv.draw()
+            self.cnv.draw()
+
+        self.cnv.mpl_connect('scroll_event', zoom)
 
     # def show(self):
     #     self.window.mainloop()
