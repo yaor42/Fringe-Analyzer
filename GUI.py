@@ -8,8 +8,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from concurrent import futures
 from FileSelectionGUI import FileSelectionGui
-from Settings import Settings
-import time
+from PlotGUI import PlotGUI
+from SettingsGUI import SettingsGUI
+# import time
 
 matplotlib.use('TkAgg')
 
@@ -34,15 +35,17 @@ class FringeGUI:
     plot = None
 
     pitch = None
-    ks = 5.7325
 
     max_value = None
     min_value = None
 
     ax_added = False
 
+    # Setting Variables
     using_multithreading = False
     number_of_threads = 0
+
+    ks = 5.7325
 
     using_hole_masks = False
 
@@ -92,9 +95,11 @@ class FringeGUI:
         self.cbo_map.current(0)
 
         self.btn_show = tk.Button(self.frm_right_upper, text='Show', command=self.draw)
+        self.btn_plot = tk.Button(self.frm_right_upper, text="Plot in 3D", command=self.plot3D)
 
-        self.cbo_map.pack(side=tk.TOP)
-        self.btn_show.pack(side=tk.BOTTOM)
+        self.cbo_map.pack()
+        self.btn_show.pack()
+        self.btn_plot.pack()
 
         self.fig_upper = Figure(figsize=(5, 3))
         self.fig_right = Figure(figsize=(3, 5))
@@ -159,7 +164,7 @@ class FringeGUI:
             self.scl_main.set(temp - 1)
 
     def change_settings(self):
-        setting_gui = Settings(self)
+        setting_gui = SettingsGUI(self)
 
         self.window.wait_window(setting_gui.window)
 
@@ -299,6 +304,15 @@ class FringeGUI:
 
             self.canvas_upper.draw()
             self.canvas_right.draw()
+
+    def plot3D(self):
+        if self.curr_map is None:
+            return
+
+        print("Calling PlotGUI")
+
+        plotGUI = PlotGUI(self)
+        # plotGUI.show()
 
     def show(self):
         self.window.mainloop()

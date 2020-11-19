@@ -2,7 +2,7 @@ import tkinter as tk
 import multiprocessing
 
 
-class Settings:
+class SettingsGUI:
     is_valid = False
 
     using_multithreading = False
@@ -84,10 +84,10 @@ class Settings:
         self.is_valid = False
         self.window.destroy()
 
-    def show(self):
-        self.window.mainloop()
+    # def show(self):
+    #     self.window.mainloop()
 
 
 if __name__ == '__main__':
-    gui = Settings(tk.Tk())
+    gui = SettingsGUI(tk.Tk())
     gui.show()
