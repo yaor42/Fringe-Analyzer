@@ -1,20 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
-from FringeAnalysisFunctions import *
+from utility.FringeAnalysisFunctions import *
 import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from concurrent import futures
-from FileSelectionGUI import FileSelectionGui
-from PlotGUI import PlotGUI
-from SettingsGUI import SettingsGUI
+from GUIs.FileSelectionGUI import FileSelectionGui
+from GUIs.PlotGUI import PlotGUI
+from GUIs.SettingsGUI import SettingsGUI
 # import time
 
 matplotlib.use('TkAgg')
 
-""" A GUI module for the Fringe Analysis 
+""" A GUIs module for the Fringe Analysis 
     
 
 """
@@ -236,7 +235,7 @@ class FringeGUI:
             )
 
     def draw(self, _=None):
-        print("Drawing!")
+        # print("Drawing!")
 
         if self.obj_file is None:
             return
@@ -309,10 +308,9 @@ class FringeGUI:
         if self.curr_map is None:
             return
 
-        print("Calling PlotGUI")
+        # print("Calling PlotGUI")
 
-        plotGUI = PlotGUI(self)
-        # plotGUI.show()
+        PlotGUI(self)
 
     def show(self):
         self.window.mainloop()

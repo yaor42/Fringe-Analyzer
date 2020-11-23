@@ -1,15 +1,11 @@
-import cv2
-import numpy as np
 from matplotlib import cm
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from FringeAnalysisFunctions import *
+from utility.FringeAnalysisFunctions import *
 
 ks = 1  # factor from phase to depth
 
 # Read in reference and object images
-refImg = cv2.imread('cone3-r.jpg', 0)
-objImg = cv2.imread('cone3.jpg', 0)
+refImg = cv2.imread('../TestPics/cone3-r.jpg', 0)
+objImg = cv2.imread('../TestPics/cone3.jpg', 0)
 
 # plt.imshow(refImg, cmap='gray')
 # plt.show()

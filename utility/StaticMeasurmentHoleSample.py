@@ -1,13 +1,10 @@
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from FringeAnalysisFunctions import *
+from utility.FringeAnalysisFunctions import *
 
 ks = 5.7325  # factor from phase to depth
 
 # Read in reference and object images
-refImg = cv2.imread('S0004000078.jpg', 0)
-objImg = cv2.imread('S0004000209.jpg', 0)
+refImg = cv2.imread('../TestPics/S0004000078.jpg', 0)
+objImg = cv2.imread('../TestPics/S0004000209.jpg', 0)
 
 plt.imshow(refImg, cmap='gray')
 plt.show()

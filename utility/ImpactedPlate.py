@@ -1,8 +1,5 @@
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 import time as t
-from FringeAnalysisFunctions import *
+from utility.FringeAnalysisFunctions import *
 
 
 fileName = fileNameGen('S000400000', 27, 'jpg', 'S0004')
