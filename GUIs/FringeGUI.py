@@ -9,7 +9,7 @@ from concurrent import futures
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
 from GUIs.SettingsGUI import SettingsGUI
-# import time
+from GUIs.CalibrationGUI import CalibrationGUI
 
 matplotlib.use('TkAgg')
 
@@ -44,6 +44,7 @@ class FringeGUI:
     using_multithreading = False
     number_of_threads = 0
 
+    # k value
     ks = 5.7325
 
     using_hole_masks = False
@@ -57,7 +58,7 @@ class FringeGUI:
         self.menu_help = tk.Menu(master=self.menu_bar, tearoff=0)
 
         self.menu_file.add_command(label="Open..", command=self.select_files)
-        self.menu_file.add_command(label="Calibration", command=None)
+        self.menu_file.add_command(label="Calibration", command=self.calibration)
         self.menu_file.add_separator()
         self.menu_file.add_command(label="Settings", command=self.change_settings)
         self.menu_file.add_separator()
@@ -311,6 +312,9 @@ class FringeGUI:
         # print("Calling PlotGUI")
 
         PlotGUI(self)
+
+    def calibration(self):
+        CalibrationGUI(self)
 
     def show(self):
         self.window.mainloop()

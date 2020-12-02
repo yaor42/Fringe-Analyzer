@@ -9,7 +9,7 @@ class FileSelectionGui:
     ref_file = None
     obj_file = None
 
-    def __init__(self, root):
+    def __init__(self, root, calibration=False):
         self.window = tk.Toplevel(root.window)
         self.window.title('Image Selection')
 
@@ -38,7 +38,8 @@ class FileSelectionGui:
 
         self.frm_left.grid(row=0, column=0)
         self.frm_right.grid(row=0, column=1)
-        self.scl_obj.grid(row=1, column=1)
+        if not calibration:
+            self.scl_obj.grid(row=1, column=1)
         self.btn_ref.grid(row=2, column=0)
         self.btn_obj.grid(row=2, column=1)
 
