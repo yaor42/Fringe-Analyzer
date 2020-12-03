@@ -2,10 +2,11 @@ import tkinter as tk
 from GUIs.FileSelectionGUI import FileSelectionGui
 from utility.FringeAnalysisFunctions import *
 import matplotlib
-from matplotlib import pyplot as plt
 from matplotlib import cm
+from matplotlib.patches import Circle
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import math
 
 matplotlib.use('TkAgg')
 
@@ -22,6 +23,11 @@ class CalibrationGUI:
     scale = None
 
     depth_map = None
+
+    is_drawing = False
+    center_x = 0.0
+    center_y = 0.0
+    radius = 0.0
 
     def __init__(self, root, using_hole_masks=False):
         self.using_hole_masks = using_hole_masks
@@ -51,15 +57,34 @@ class CalibrationGUI:
         self.ax = None
         self.plot = None
 
-        def onclick(event):
+        def on_press(event):
             if event.button == 1:
                 if self.patch is not None:
                     self.patch.remove()
-                self.patch = plt.Circle((event.xdata, event.ydata), 5, facecolor='none', edgecolor='black')
+                self.is_drawing = True
+                self.center_x = event.xdata
+                self.center_y = event.ydata
+                self.patch = Circle((self.center_x, self.center_y), self.radius, facecolor='none', edgecolor='black')
                 self.patch = self.ax.add_patch(self.patch)
+
+        def on_move(event):
+            if event.button == 1 and self.is_drawing:
+                self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
+                self.patch.set_radius(self.radius)
                 self.canvas.draw()
 
-        self.canvas.mpl_connect('button_press_event', onclick)
+        def on_release(event):
+            if event.button == 1:
+                self.is_drawing = False
+                self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
+                self.patch.set_radius(self.radius)
+                self.canvas.draw()
+
+        self.canvas.mpl_connect('button_press_event', on_press)
+        self.canvas.mpl_connect('motion_notify_event', on_move)
+        self.canvas.mpl_connect('button_release_event', on_release)
+
+
 
         self.frm_left.grid(row=0, column=0)
         self.frm_right.grid(row=0, column=1)
@@ -85,14 +110,12 @@ class CalibrationGUI:
 
         ref_phase = fiveStepShift(ref_img, pitch, maskHoles=self.using_hole_masks)
 
-        _, _, _, self.depth_map = analyze_phase(
+        _, _, _, [self.depth_map] = analyze_phase(
             ref_phase,
             obj_img,
             self.ks,
             pitch
         )
-
-        self.depth_map = self.depth_map[0]
 
         self.draw()
 
