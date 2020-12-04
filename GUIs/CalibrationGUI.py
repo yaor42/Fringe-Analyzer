@@ -20,9 +20,9 @@ class CalibrationGUI:
     patch = None
 
     ks = 1.0
-    scale = None
+    scale = 1.0
 
-    depth_map = None
+    unwrapped_phase = None
 
     is_drawing = False
     center_x = 0.0
@@ -61,33 +61,75 @@ class CalibrationGUI:
             if event.button == 1:
                 if self.patch is not None:
                     self.patch.remove()
+
                 self.is_drawing = True
                 self.center_x = event.xdata
                 self.center_y = event.ydata
+
                 self.patch = Circle((self.center_x, self.center_y), self.radius, facecolor='none', edgecolor='black')
                 self.patch = self.ax.add_patch(self.patch)
 
         def on_move(event):
             if event.button == 1 and self.is_drawing:
-                self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
-                self.patch.set_radius(self.radius)
-                self.canvas.draw()
+                self.update(event)
 
         def on_release(event):
             if event.button == 1:
                 self.is_drawing = False
-                self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
-                self.patch.set_radius(self.radius)
-                self.canvas.draw()
+                self.update(event)
 
         self.canvas.mpl_connect('button_press_event', on_press)
         self.canvas.mpl_connect('motion_notify_event', on_move)
         self.canvas.mpl_connect('button_release_event', on_release)
 
+        self.frm_left.grid(row=0, column=0, ipadx=5, ipady=5)
 
+        self.str_var_info = tk.StringVar()
+        self.str_var_info.set(
+            f"Center Point : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"Radius : {self.radius:.3f}"
+        )
+        self.lbl_info = tk.Label(master=self.frm_right, textvariable=self.str_var_info, width=25)
 
-        self.frm_left.grid(row=0, column=0)
-        self.frm_right.grid(row=0, column=1)
+        self.lbl_info.grid(row=0, column=0, ipadx=5, ipady=5)
+
+        self.frm_circle_input = tk.Frame(master=self.frm_right)
+
+        self.lbl_cone_radius = tk.Label(master=self.frm_circle_input, text="Radius of the cone(mm): ")
+        self.lbl_cone_height = tk.Label(master=self.frm_circle_input, text="Height of the cone(mm): ")
+        self.ent_cone_radius = tk.Entry(master=self.frm_circle_input)
+        self.ent_cone_height = tk.Entry(master=self.frm_circle_input)
+
+        self.lbl_cone_radius.grid(row=0, column=0)
+        self.lbl_cone_height.grid(row=1, column=0)
+        self.ent_cone_radius.grid(row=0, column=1)
+        self.ent_cone_height.grid(row=1, column=1)
+
+        self.frm_circle_input.grid(row=1, column=0, ipadx=5, ipady=5)
+
+        self.btn_analyze = tk.Button(master=self.frm_right, text="Calibration", command=self.calibration)
+        self.btn_analyze.grid(row=2, column=0, ipadx=5, ipady=5)
+
+        self.str_var_ks = tk.StringVar()
+        self.str_var_ks.set(
+            f"ks = {self.ks:.3f}\n"
+            f"Scale : {self.scale:.3f}"
+        )
+        self.lbl_current_ks = tk.Label(master=self.frm_right, textvariable=self.str_var_ks)
+
+        self.lbl_current_ks.grid(row=3, column=0, ipadx=5, ipady=5)
+
+        self.frm_right.grid(row=0, column=1, ipadx=5, ipady=5)
+
+        self.frm_submit = tk.Frame(master=self.window)
+
+        self.btn_cancel = tk.Button(master=self.frm_submit, text="Cancel", command=self.cancel)
+        self.btn_submit = tk.Button(master=self.frm_submit, text="Submit", command=self.submit)
+
+        self.btn_cancel.grid(row=0, column=0, ipadx=5, ipady=5)
+        self.btn_submit.grid(row=0, column=1, ipadx=5, ipady=5)
+
+        self.frm_submit.grid(row=1, column=1, ipadx=5, ipady=5)
 
     def select_files(self):
         file_gui = FileSelectionGui(self, True)
@@ -110,7 +152,7 @@ class CalibrationGUI:
 
         ref_phase = fiveStepShift(ref_img, pitch, maskHoles=self.using_hole_masks)
 
-        _, _, _, [self.depth_map] = analyze_phase(
+        _, _, [self.unwrapped_phase], _ = analyze_phase(
             ref_phase,
             obj_img,
             self.ks,
@@ -121,8 +163,32 @@ class CalibrationGUI:
 
     def draw(self):
         self.ax = self.fig.add_subplot(111)
-        self.plot = self.ax.imshow(self.depth_map, cmap=cm.turbo)
+        self.plot = self.ax.imshow(self.unwrapped_phase, cmap=cm.turbo)
         self.canvas.draw()
+
+    def update(self, event):
+        self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
+
+        self.str_var_info.set(
+            f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"Radius : {self.radius:.3f}"
+        )
+        self.patch.set_radius(self.radius)
+
+        self.canvas.draw()
+
+    def calibration(self):
+        self.ks = float(self.ent_cone_height.get()) / self.unwrapped_phase[int(self.center_x)][int(self.center_y)]
+        self.scale = float(self.ent_cone_radius.get()) / self.radius
+
+        self.str_var_ks.set(
+            f"ks = {self.ks:.3f}\n"
+            f"Scale : {self.scale:.3f}"
+        )
+
+    def submit(self):
+        self.is_valid = True
+        self.window.destroy()
 
     def cancel(self):
         self.is_valid = False

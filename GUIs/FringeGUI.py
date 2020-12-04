@@ -44,8 +44,9 @@ class FringeGUI:
     using_multithreading = False
     number_of_threads = 0
 
-    # k value
-    ks = 5.7325
+    # k value and scale
+    ks = 1.0
+    scale = 1.0
 
     using_hole_masks = False
 
@@ -53,6 +54,7 @@ class FringeGUI:
         self.window = tk.Tk()
         self.window.title("Fringe Analysis Prototype")
 
+        # Creating Menu
         self.menu_bar = tk.Menu(master=self.window)
         self.menu_file = tk.Menu(master=self.menu_bar, tearoff=0)
         self.menu_help = tk.Menu(master=self.menu_bar, tearoff=0)
@@ -83,7 +85,7 @@ class FringeGUI:
         self.frm_left_lower = tk.Frame(master=self.frm_figs)
 
         self.cbo_map = ttk.Combobox(
-            self.frm_right_upper,
+            master=self.frm_right_upper,
             value=[
                 'Object Surface Contour',
                 'Quality Map',
@@ -162,30 +164,6 @@ class FringeGUI:
 
         if temp - 1 >= 1:
             self.scl_main.set(temp - 1)
-
-    def change_settings(self):
-        setting_gui = SettingsGUI(self)
-
-        self.window.wait_window(setting_gui.window)
-
-        if setting_gui.is_valid:
-            self.using_multithreading = setting_gui.using_multithreading
-            self.number_of_threads = setting_gui.number_of_threads
-            self.using_hole_masks = setting_gui.using_hole_masks
-
-    def select_files(self):
-        file_gui = FileSelectionGui(self)
-
-        self.window.wait_window(file_gui.window)
-
-        if file_gui.is_valid:
-            self.ref_file = file_gui.ref_file
-            self.obj_file = file_gui.obj_file
-
-            self.analyze()
-
-            self.scl_main.configure(from_=1, to=len(self.obj_file))
-            self.draw()
 
     def analyze(self):
         ref_img = cv2.imread(self.ref_file, cv2.IMREAD_GRAYSCALE)
@@ -305,6 +283,30 @@ class FringeGUI:
             self.canvas_upper.draw()
             self.canvas_right.draw()
 
+    def change_settings(self):
+        setting_gui = SettingsGUI(self)
+
+        self.window.wait_window(setting_gui.window)
+
+        if setting_gui.is_valid:
+            self.using_multithreading = setting_gui.using_multithreading
+            self.number_of_threads = setting_gui.number_of_threads
+            self.using_hole_masks = setting_gui.using_hole_masks
+
+    def select_files(self):
+        file_gui = FileSelectionGui(self)
+
+        self.window.wait_window(file_gui.window)
+
+        if file_gui.is_valid:
+            self.ref_file = file_gui.ref_file
+            self.obj_file = file_gui.obj_file
+
+            self.analyze()
+
+            self.scl_main.configure(from_=1, to=len(self.obj_file))
+            self.draw()
+
     def plot3D(self):
         if self.curr_map is None:
             return
@@ -314,7 +316,13 @@ class FringeGUI:
         PlotGUI(self)
 
     def calibration(self):
-        CalibrationGUI(self)
+        cal_gui = CalibrationGUI(self)
+
+        self.window.wait_window(cal_gui.window)
+
+        if cal_gui.is_valid:
+            self.ks = cal_gui.ks
+            self.scale = cal_gui.scale
 
     def show(self):
         self.window.mainloop()
