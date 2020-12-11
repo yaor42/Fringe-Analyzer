@@ -10,35 +10,35 @@ class FileSelectionGui:
     obj_file = None
 
     def __init__(self, root, calibration=False):
+        self.calibration = calibration
         self.window = tk.Toplevel(root.window)
         self.window.title('Image Selection')
 
         self.frm_left = tk.Frame(master=self.window)
         self.frm_right = tk.Frame(master=self.window)
 
+        self.frm_left.grid(row=0, column=0)
+        self.frm_right.grid(row=0, column=1)
+
         self.lbl_ref = tk.Label(master=self.frm_left, text='Select reference image: ')
-        self.lbl_obj = tk.Label(master=self.frm_right, text='Select object images: ')
-
         self.ref_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
-        self.obj_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
-
         self.lbl_ref_img = tk.Label(master=self.frm_left, image=self.ref_img)
-        self.lbl_obj_img = tk.Label(master=self.frm_right, image=self.obj_img)
-
-        self.scl_obj = tk.Scale(master=self.window, command=self.redraw_obj, orient=tk.HORIZONTAL)
-
-        self.btn_ref = tk.Button(master=self.window, text="Open..", command=self.select_ref_image)
-        self.btn_obj = tk.Button(master=self.window, text="Open..", command=self.select_obj_image)
 
         self.lbl_ref.pack()
         self.lbl_ref_img.pack()
 
+        self.lbl_obj = tk.Label(master=self.frm_right, text='Select object images: ')
+        self.obj_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
+        self.lbl_obj_img = tk.Label(master=self.frm_right, image=self.obj_img)
+
         self.lbl_obj.pack()
         self.lbl_obj_img.pack()
 
-        self.frm_left.grid(row=0, column=0)
-        self.frm_right.grid(row=0, column=1)
-        if not calibration:
+        self.btn_ref = tk.Button(master=self.window, text="Open..", command=self.select_ref_image)
+        self.btn_obj = tk.Button(master=self.window, text="Open..", command=self.select_obj_image)
+
+        if not self.calibration:
+            self.scl_obj = tk.Scale(master=self.window, command=self.redraw_obj, orient=tk.HORIZONTAL)
             self.scl_obj.grid(row=1, column=1)
         self.btn_ref.grid(row=2, column=0)
         self.btn_obj.grid(row=2, column=1)
@@ -86,7 +86,9 @@ class FileSelectionGui:
 
         self.obj_img = ImageTk.PhotoImage(Image.open(self.obj_file[0]).resize((200, 200)))
         self.lbl_obj_img.configure(image=self.obj_img)
-        self.scl_obj.configure(from_=1, to=len(self.obj_file))
+
+        if not self.calibration:
+            self.scl_obj.configure(from_=1, to=len(self.obj_file))
 
         self.window.lift()
 

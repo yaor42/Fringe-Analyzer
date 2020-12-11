@@ -12,10 +12,12 @@ matplotlib.use('TkAgg')
 
 
 class PlotGUI:
-    base_scale = 0.2
+    zoom_scale = 0.2
 
-    def __init__(self, root):
+    def __init__(self, root, base_scale):
+        self.base_scale = base_scale
         self.map = root.curr_map
+
         self.window = tk.Toplevel(root.window)
 
         self.menu_bar = tk.Menu(master=self.window)
@@ -31,8 +33,8 @@ class PlotGUI:
 
         height, length = self.map.shape
 
-        self.axis_x = np.array([[x for x in range(length)] for _ in range(height)])
-        self.axis_y = np.array([[x for _ in range(height)] for x in range(length)])
+        self.axis_x = np.array([[x * base_scale for x in range(length)] for _ in range(height)])
+        self.axis_y = np.array([[x * base_scale for _ in range(height)] for x in range(length)])
 
         self.fig = Figure()
 
@@ -52,11 +54,14 @@ class PlotGUI:
             antialiased=False
         )
 
+        _, _, _, _, minz, _ = self.ax.get_w_lims()
+        self.ax.set_zlim3d(minz, length * base_scale)
+
         def zoom(event):
             if event.button == 'down':
-                scale_factor = self.base_scale
+                scale_factor = self.zoom_scale
             elif event.button == 'up':
-                scale_factor = - self.base_scale
+                scale_factor = - self.zoom_scale
             else:
                 scale_factor = 0
 

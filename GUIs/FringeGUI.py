@@ -202,7 +202,7 @@ class FringeGUI:
 
     def prev_pic(self):
         """
-            This function is binded to the btn_next_pic which changes map displayed to previous one
+            This function is bound to the btn_next_pic which changes map displayed to previous one
         """
         temp = self.scl_main.get()
 
@@ -387,7 +387,7 @@ class FringeGUI:
 
         # print("Calling PlotGUI")
 
-        PlotGUI(self)
+        PlotGUI(self, self.scale)
 
     def calibration(self):
         """
