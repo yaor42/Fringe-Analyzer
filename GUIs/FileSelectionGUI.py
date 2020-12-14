@@ -37,11 +37,12 @@ class FileSelectionGui:
         self.btn_ref = tk.Button(master=self.window, text="Open..", command=self.select_ref_image)
         self.btn_obj = tk.Button(master=self.window, text="Open..", command=self.select_obj_image)
 
+        self.btn_ref.grid(row=2, column=0)
+        self.btn_obj.grid(row=2, column=1)
+
         if not self.calibration:
             self.scl_obj = tk.Scale(master=self.window, command=self.redraw_obj, orient=tk.HORIZONTAL)
             self.scl_obj.grid(row=1, column=1)
-        self.btn_ref.grid(row=2, column=0)
-        self.btn_obj.grid(row=2, column=1)
 
         self.frm_button = tk.Frame(master=self.window)
 
