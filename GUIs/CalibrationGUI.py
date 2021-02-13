@@ -132,6 +132,9 @@ class CalibrationGUI:
 
         self.bind()
 
+        # Set the window not resizable so the layout would not be destroyed
+        self.window.resizable(False, False)
+
     def select_files(self):
         file_gui = FileSelectionGui(self, True)
 

@@ -10,6 +10,9 @@ class FileSelectionGui:
     # Marks if the result is valid
     is_valid = False
 
+    # Image Size
+    img_size = 512
+
     # Results
     ref_file = None
     obj_file = None
@@ -28,7 +31,7 @@ class FileSelectionGui:
 
         # Text label and image preview label for reference input
         self.lbl_ref = tk.Label(master=self.frm_left, text='Select reference image: ')
-        self.ref_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
+        self.ref_img = ImageTk.PhotoImage(Image.new('RGB', (self.img_size, self.img_size), (240, 240, 240)))
         self.lbl_ref_img = tk.Label(master=self.frm_left, image=self.ref_img)
 
         self.lbl_ref.pack()
@@ -46,7 +49,7 @@ class FileSelectionGui:
 
         # Text label and image preview label for object(s) input
         self.lbl_obj = tk.Label(master=self.frm_right, text='Select object images: ')
-        self.obj_img = ImageTk.PhotoImage(Image.new('RGB', (200, 200), (240, 240, 240)))
+        self.obj_img = ImageTk.PhotoImage(Image.new('RGB', (self.img_size, self.img_size), (240, 240, 240)))
         self.lbl_obj_img = tk.Label(master=self.frm_right, image=self.obj_img)
 
         self.lbl_obj.pack()
@@ -57,6 +60,7 @@ class FileSelectionGui:
         self.btn_obj.grid(row=2, column=1)
 
         # Calibration does not need multiple object input, hence, when not calibrating
+        # do not show the slider for multiple preview images
         # do not show the slider for multiple preview images
         if not self.calibration:
             self.scl_obj = tk.Scale(master=self.window, command=self.redraw_obj, orient=tk.HORIZONTAL)
@@ -72,6 +76,9 @@ class FileSelectionGui:
         self.btn_cancel.grid(row=0, column=0, ipadx=5, padx=5, pady=5)
 
         self.frm_button.grid(row=3, column=1)
+
+        # Set the window not resizable so the layout would not be destroyed
+        self.window.resizable(False, False)
 
     def select_ref_image(self):
         """
@@ -89,7 +96,20 @@ class FileSelectionGui:
             ]
         )
 
-        self.ref_img = ImageTk.PhotoImage(Image.open(self.ref_file).resize((200, 200)))
+        image = Image.open(self.ref_file)
+
+        height = image.height
+        width = image.width
+
+        if height > width:
+            width = int(self.img_size / height * width)
+            height = self.img_size
+        else:
+            height = int(self.img_size / width * height)
+            width = self.img_size
+
+        self.ref_img = ImageTk.PhotoImage(image.resize((width, height)))
+
         self.lbl_ref_img.configure(image=self.ref_img)
 
         self.window.lift()
@@ -110,7 +130,19 @@ class FileSelectionGui:
             ]
         )
 
-        self.obj_img = ImageTk.PhotoImage(Image.open(self.obj_file[0]).resize((200, 200)))
+        image = Image.open(self.obj_file[0])
+
+        height = image.height
+        width = image.width
+
+        if height > width:
+            width = int(self.img_size / height * width)
+            height = self.img_size
+        else:
+            height = int(self.img_size / width * height)
+            width = self.img_size
+
+        self.obj_img = ImageTk.PhotoImage(image.resize((width, height)))
         self.lbl_obj_img.configure(image=self.obj_img)
 
         # Adaptation for calibration
@@ -126,14 +158,26 @@ class FileSelectionGui:
         if self.obj_file is None:
             return
 
-        self.obj_img = ImageTk.PhotoImage(Image.open(self.obj_file[self.scl_obj.get() - 1]).resize((200, 200)))
+        image = Image.open(self.obj_file[self.scl_obj.get() - 1])
+
+        height = image.height
+        width = image.width
+
+        if height > width:
+            width = int(self.img_size / height * width)
+            height = self.img_size
+        else:
+            height = int(self.img_size / width * height)
+            width = self.img_size
+
+        self.obj_img = ImageTk.PhotoImage(image.resize((width, height)))
         self.lbl_obj_img.configure(image=self.obj_img)
 
     def check_and_submit(self):
         """
             Check if the results are valid for reading, if so destroy the window
         """
-        if self.obj_file is not None or self.ref_file is not None:
+        if self.obj_file is not None and self.ref_file is not None:
             self.is_valid = True
             self.window.destroy()
         else:

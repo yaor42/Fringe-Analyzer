@@ -67,6 +67,9 @@ class SettingsGUI:
 
         self.frm_button.grid(row=3, column=1)
 
+        # Set the window not resizable so the layout would not be destroyed
+        self.window.resizable(False, False)
+
     def submit(self):
         self.is_valid = True
 

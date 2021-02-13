@@ -79,6 +79,9 @@ class PlotGUI:
 
         self.cnv.mpl_connect('scroll_event', zoom)
 
+        # Set the window not resizable so the layout would not be destroyed
+        self.window.resizable(False, False)
+
     def save_fig(self):
         filename = asksaveasfilename(
             title="Save as..",
