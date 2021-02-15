@@ -11,6 +11,20 @@ from matplotlib import cm
 matplotlib.use('TkAgg')
 
 
+def find_range(map):
+    min_value = map[0][0]
+    max_value = map[0][0]
+
+    for row in map:
+        for elem in row:
+            if min_value > elem:
+                min_value = elem
+            if max_value < elem:
+                max_value = elem
+
+    return min_value, max_value
+
+
 class PlotGUI:
     zoom_scale = 0.2
 
@@ -34,7 +48,7 @@ class PlotGUI:
         height, length = self.map.shape
 
         self.axis_x = np.array([[x * base_scale for x in range(length)] for _ in range(height)])
-        self.axis_y = np.array([[x * base_scale for _ in range(height)] for x in range(length)])
+        self.axis_y = np.array([[x * base_scale for _ in range(length)] for x in range(height)])
 
         self.fig = Figure()
 
@@ -42,42 +56,47 @@ class PlotGUI:
         self.cnv.draw()
         self.cnv.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+        # print(self.axis_x.shape)
+        # print(self.axis_y.shape)
+        # print(self.map.shape)
+
         self.ax = self.fig.add_subplot(111, projection="3d")
         self.ax.plot_surface(
             self.axis_x,
             self.axis_y,
             self.map,
-            rstride=int(height / 25),
-            cstride=int(length / 25),
-            cmap=cm.coolwarm,
+            rstride=int(height / 50),
+            cstride=int(length / 50),
+            cmap=cm.turbo,
             linewidth=0,
             antialiased=False
         )
 
-        _, _, _, _, minz, _ = self.ax.get_w_lims()
-        self.ax.set_zlim3d(minz, length * base_scale)
+        minx, maxx, miny, maxy, minz, maxz = self.ax.get_w_lims()
+        self.ax.set_ylim3d((maxy, miny))
+        self.ax.set_zlim3d((minz, length * base_scale))
 
-        def zoom(event):
-            if event.button == 'down':
-                scale_factor = self.zoom_scale
-            elif event.button == 'up':
-                scale_factor = - self.zoom_scale
-            else:
-                scale_factor = 0
-
-            minx, maxx, miny, maxy, minz, maxz = self.ax.get_w_lims()
-            dx = (maxx - minx) * scale_factor
-            dy = (maxy - miny) * scale_factor
-            dz = (maxz - minz) * scale_factor
-
-            self.ax.set_xlim3d(minx - dx, maxx + dx)
-            self.ax.set_ylim3d(miny - dy, maxy + dy)
-            self.ax.set_zlim3d(minz - dz, maxz + dz)
-
-            self.ax.get_proj()
-            self.cnv.draw_idle()
-
-        self.cnv.mpl_connect('scroll_event', zoom)
+        # def zoom(event):
+        #     if event.button == 'down':
+        #         scale_factor = self.zoom_scale
+        #     elif event.button == 'up':
+        #         scale_factor = - self.zoom_scale
+        #     else:
+        #         scale_factor = 0
+        #
+        #     minx, maxx, miny, maxy, minz, maxz = self.ax.get_w_lims()
+        #     dx = (maxx - minx) * scale_factor
+        #     dy = (maxy - miny) * scale_factor
+        #     dz = (maxz - minz) * scale_factor
+        #
+        #     self.ax.set_xlim3d(minx - dx, maxx + dx)
+        #     self.ax.set_ylim3d(miny - dy, maxy + dy)
+        #     self.ax.set_zlim3d(minz - dz, maxz + dz)
+        #
+        #     self.ax.get_proj()
+        #     self.cnv.draw_idle()
+        #
+        # self.cnv.mpl_connect('scroll_event', zoom)
 
         # Set the window not resizable so the layout would not be destroyed
         self.window.resizable(False, False)

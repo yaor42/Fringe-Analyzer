@@ -295,7 +295,7 @@ class FringeGUI:
             self.ax_upper = self.fig_upper.add_subplot(111)
             self.ax_right = self.fig_right.add_subplot(111)
             self.ax_main = self.fig_main.add_subplot(111)
-            self.ax_left = self.fig_left.add_axes([0.45, 0.1, 0.1, 0.8])
+            self.ax_left = self.fig_left.add_axes([0.5, 0.1, 0.15, 0.75])
 
             self.canvas_main.mpl_connect('button_press_event', self.onclick_main)
 
@@ -304,7 +304,7 @@ class FringeGUI:
         else:
             # if they are set, just remove the color bar for update
             self.ax_left.remove()
-            self.ax_left = self.fig_left.add_axes([0.45, 0.1, 0.1, 0.8])
+            self.ax_left = self.fig_left.add_axes([0.5, 0.1, 0.15, 0.75])
 
         if self.plot is None:
             # if main display is empty, we create new display
@@ -331,8 +331,21 @@ class FringeGUI:
         #        event.x, event.y, event.xdata, event.ydata))
 
         if event.button == 1:
-            x = self.curr_map[int(event.xdata), :]
-            y = self.curr_map[:, int(event.ydata)]
+            height = len(self.curr_map)
+            width = len(self.curr_map[0])
+
+            # print(f"h = {height}, w = {width}")
+
+            x_offset = 0
+            y_offset = 0
+
+            if height > width:
+                x_offset = (height - width) / 2
+            elif height < width:
+                y_offset = (width - height) / 2
+
+            x = self.curr_map[:, int(event.xdata)]
+            y = self.curr_map[int(event.ydata), :]
             axis_x = [i for i in range(len(x))]
             axis_y = [i for i in range(len(y))]
 
@@ -342,8 +355,11 @@ class FringeGUI:
             self.ax_upper.plot(axis_y, y)
             self.ax_right.plot(x, axis_x)
 
+            self.ax_upper.set_xlim((- x_offset, x_offset + len(y) - 1))
             self.ax_upper.set_ylim((self.min_value, self.max_value))
+
             self.ax_right.set_xlim((self.min_value, self.max_value))
+            self.ax_right.set_ylim((y_offset + len(x) - 1, - y_offset))
 
             self.canvas_upper.draw()
             self.canvas_right.draw()
@@ -411,75 +427,3 @@ class FringeGUI:
 if __name__ == '__main__':
     main = FringeGUI()
     main.show()
-
-    # from tkinter.filedialog import askopenfilename, askopenfilenames
-    #
-    # number_of_threads = 8
-    # ks = 5.7325
-    #
-    # ref_file = askopenfilename()
-    # obj_file = askopenfilenames()
-    #
-    # ref_img = cv2.imread(ref_file, cv2.IMREAD_GRAYSCALE)
-    # obj_img = [cv2.imread(f, cv2.IMREAD_GRAYSCALE) for f in obj_file]
-    #
-    # pitch = getPitch(ref_img)
-    #
-    # ref_phase = fiveStepShift(ref_img, pitch, maskHoles=True)
-    #
-    # start_time = time.time()
-    #
-    # num_img = len(obj_img)
-    #
-    # obj_number_per_thread = int(num_img / number_of_threads)
-    # future_list = []
-    #
-    # obj_phase = []
-    # diff_phase = []
-    # unwrapped_phase = []
-    # depth_map = []
-    #
-    # with futures.ThreadPoolExecutor() as executor:
-    #     for i in range(number_of_threads):
-    #         start = i * obj_number_per_thread
-    #         end = (i + 1) * obj_number_per_thread if i + 1 != number_of_threads else num_img
-    #
-    #         future_list.append(
-    #             executor.submit(
-    #                 analyze_phase,
-    #                 ref_phase,
-    #                 obj_img[start:end],
-    #                 ks,
-    #                 pitch
-    #             )
-    #         )
-    #
-    # for future in future_list:
-    #     obj_phase_, diff_phase_, unwrapped_phase_, depth_map_ = future.result()
-    #     obj_phase.extend(obj_phase_)
-    #     diff_phase.extend(diff_phase_)
-    #     unwrapped_phase.extend(unwrapped_phase_)
-    #     depth_map.extend(depth_map_)
-    #
-    # end_time = time.time()
-    #
-    # print(f"Multithreading Version takes {end_time - start_time}s")
-    #
-    # start_time = time.time()
-    #
-    # obj_phase_2, diff_phase_2, unwrapped_phase_2, depth_map_2 = analyze_phase(
-    #     ref_phase,
-    #     obj_img,
-    #     ks,
-    #     pitch
-    # )
-    #
-    # end_time = time.time()
-    #
-    # print(f"Single-thread Version takes {end_time - start_time}s")
-    #
-    # print(f"depth_map length is {len(depth_map)}")
-    # print(f"depth_map_2 length is {len(depth_map_2)}")
-    #
-    # print(depth_map[0])
-    # print(depth_map_2[0])
