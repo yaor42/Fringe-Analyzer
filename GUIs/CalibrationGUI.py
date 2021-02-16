@@ -1,5 +1,8 @@
 import tkinter as tk
 from  tkinter import ttk
+
+from matplotlib.backend_bases import MouseButton
+
 from GUIs.FileSelectionGUI import FileSelectionGui
 from utility.FringeAnalysisFunctions import *
 import matplotlib
@@ -18,7 +21,8 @@ class CalibrationGUI:
     ref_file = None
     obj_file = None
 
-    patch = None
+    patch_selected = None
+    patch_center = None
 
     ks = 1.0
     scale = 1.0
@@ -27,6 +31,10 @@ class CalibrationGUI:
 
     # State of dragging a circle or a square
     is_drawing = False
+    is_dragging = False
+
+    drag_x = 0
+    drag_y = 0
 
     # Center and radian information of the circle or the square
     center_x = 0.0
@@ -206,58 +214,152 @@ class CalibrationGUI:
             self.str_var_input_2.set("The Height of the Pyramid(mm): ")
 
     def on_press_circle(self, event):
-        if event.button == 1:
-            if self.patch is not None:
-                self.patch.remove()
+        # print(event.button)
+        if event.button == MouseButton.LEFT:
+            if self.patch_selected is not None:
+                self.patch_selected.remove()
+
+            if self.patch_center is not None:
+                self.patch_center.remove()
 
             self.is_drawing = True
             self.center_x = event.xdata
             self.center_y = event.ydata
 
-            self.patch = Circle((self.center_x, self.center_y), self.radius, facecolor='none', edgecolor='black')
-            self.patch = self.ax.add_patch(self.patch)
+            self.patch_selected = Circle((self.center_x, self.center_y),
+                                         self.radius, facecolor='none', edgecolor='black')
+            self.patch_selected = self.ax.add_patch(self.patch_selected)
+
+            self.patch_center = Circle((self.center_x, self.center_y),
+                                       2, facecolor='black', edgecolor='black', hatch='x')
+            self.patch_center = self.ax.add_patch(self.patch_center)
+        elif event.button == MouseButton.RIGHT:
+            self.is_dragging = True
+            self.drag_x = event.xdata
+            self.drag_y = event.ydata
 
     def on_move_circle(self, event):
-        if event.button == 1 and self.is_drawing:
+        if event.button == MouseButton.LEFT and self.is_drawing:
             self.update_circle(event)
+        elif event.button == MouseButton.RIGHT  and self.is_dragging:
+            self.move_circle(event)
 
     def on_release_circle(self, event):
-        if event.button == 1:
+        if event.button == MouseButton.LEFT:
             self.is_drawing = False
             self.update_circle(event)
+        elif event.button == MouseButton.RIGHT:
+            self.is_dragging = False
+            self.move_circle(event)
 
-    def update_circle(self, event):
-        self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
+    def move_circle(self, event):
+        if self.patch_selected is not None:
+            self.patch_selected.remove()
+
+        if self.patch_center is not None:
+            self.patch_center.remove()
+
+        self.center_x += event.xdata - self.drag_x
+        self.center_y += event.ydata - self.drag_y
+
+        self.patch_selected = Circle((self.center_x, self.center_y),
+                                     self.radius, facecolor='none', edgecolor='black')
+        self.patch_selected = self.ax.add_patch(self.patch_selected)
+
+        self.patch_center = Circle((self.center_x, self.center_y),
+                                   2, facecolor='black', edgecolor='black', hatch='x')
+        self.patch_center = self.ax.add_patch(self.patch_center)
 
         self.str_var_info.set(
             f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
             f"Radius : {self.radius:.3f}\n"
         )
-        self.patch.set_radius(self.radius)
+
+        self.drag_x = event.xdata
+        self.drag_y = event.ydata
+
+        self.canvas.draw()
+
+    def update_circle(self, event):
+        self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
+
+        self.patch_selected.set_radius(self.radius)
+
+        self.str_var_info.set(
+            f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"Radius : {self.radius:.3f}\n"
+        )
 
         self.canvas.draw()
 
     def on_press_square(self, event):
         if event.button == 1:
-            if self.patch is not None:
-                self.patch.remove()
+            if self.patch_selected is not None:
+                self.patch_selected.remove()
+
+            if self.patch_center is not None:
+                self.patch_center.remove()
 
             self.is_drawing = True
             self.center_x = event.xdata
             self.center_y = event.ydata
 
-            self.patch = RegularPolygon((self.center_x, self.center_y), 4, self.radius, orientation=0.0,
-                                        facecolor='none', edgecolor='black')
-            self.patch = self.ax.add_patch(self.patch)
+            self.patch_selected = RegularPolygon((self.center_x, self.center_y),
+                                                 4, self.radius, orientation=0.0,
+                                                 facecolor='none', edgecolor='black')
+            self.patch_selected = self.ax.add_patch(self.patch_selected)
+
+            self.patch_center = Circle((self.center_x, self.center_y),
+                                       2, facecolor='black', edgecolor='black', hatch='x')
+            self.patch_center = self.ax.add_patch(self.patch_center)
+        elif event.button == MouseButton.RIGHT:
+            self.is_dragging = True
+            self.drag_x = event.xdata
+            self.drag_y = event.ydata
 
     def on_move_square(self, event):
-        if event.button == 1 and self.is_drawing:
+        if event.button == MouseButton.LEFT and self.is_drawing:
             self.update_square(event)
+        elif event.button == MouseButton.RIGHT and self.is_dragging:
+            self.move_square(event)
 
     def on_release_square(self, event):
         if event.button == 1:
             self.is_drawing = False
             self.update_square(event)
+        elif event.button == MouseButton.RIGHT:
+            self.is_dragging = False
+            self.move_square(event)
+
+    def move_square(self, event):
+        if self.patch_selected is not None:
+            self.patch_selected.remove()
+
+        if self.patch_center is not None:
+            self.patch_center.remove()
+
+        self.center_x += event.xdata - self.drag_x
+        self.center_y += event.ydata - self.drag_y
+
+        self.patch_selected = RegularPolygon((self.center_x, self.center_y),
+                                             4, self.radius, orientation=self.angle,
+                                             facecolor='none', edgecolor='black')
+        self.patch_selected = self.ax.add_patch(self.patch_selected)
+
+        self.patch_center = Circle((self.center_x, self.center_y),
+                                   2, facecolor='black', edgecolor='black', hatch='x')
+        self.patch_center = self.ax.add_patch(self.patch_center)
+
+        self.str_var_info.set(
+            f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"Radius : {self.radius:.3f}\n"
+            f"Angle  : {self.angle}"
+        )
+
+        self.drag_x = event.xdata
+        self.drag_y = event.ydata
+
+        self.canvas.draw()
 
     def update_square(self, event):
         self.radius = math.sqrt((event.xdata - self.center_x) ** 2 + (event.ydata - self.center_y) ** 2)
@@ -270,14 +372,14 @@ class CalibrationGUI:
         else:
             self.angle = 0.0
 
+        self.patch_selected.radius = self.radius
+        self.patch_selected.orientation = self.angle
+
         self.str_var_info.set(
             f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
             f"Radius : {self.radius:.3f}\n"
             f"Angle  : {self.angle}"
         )
-
-        self.patch.radius = self.radius
-        self.patch.orientation = self.angle
 
         self.canvas.draw()
 
