@@ -1,16 +1,16 @@
+import math
 import tkinter as tk
-from  tkinter import ttk
+from tkinter import ttk
 
-from matplotlib.backend_bases import MouseButton
-
-from GUIs.FileSelectionGUI import FileSelectionGui
-from utility.FringeAnalysisFunctions import *
 import matplotlib
 from matplotlib import cm
 from matplotlib.patches import Circle, RegularPolygon
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import math
+from matplotlib.backend_bases import MouseButton
+
+from utility.FringeAnalysisFunctions import *
+from GUIs.FileSelectionGUI import FileSelectionGui
 
 matplotlib.use('TkAgg')
 

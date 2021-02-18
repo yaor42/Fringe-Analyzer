@@ -5,7 +5,9 @@ import matplotlib
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+
 from concurrent import futures
+
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
 from GUIs.SettingsGUI import SettingsGUI
@@ -49,7 +51,7 @@ class FringeGUI:
 
     # Setting Variables
     using_multithreading = False
-    number_of_threads = 0
+    num_threads = 0
 
     using_hole_masks = False
 
@@ -223,37 +225,49 @@ class FringeGUI:
 
         num_img = len(obj_img)
 
-        if self.using_multithreading and num_img > self.number_of_threads:
-            # Using multi-threading
-            obj_number_per_thread = int(num_img / self.number_of_threads)
-            future_list = []
+        if self.using_multithreading and num_img > self.num_threads:
+            # # Using multi-threading
+            # obj_number_per_thread = int(num_img / self.num_threads)
+            # future_list = []
+            #
+            # self.obj_phase = []
+            # self.diff_phase = []
+            # self.unwrapped_phase = []
+            # self.depth_map = []
+            #
+            # with futures.ThreadPoolExecutor() as executor:
+            #     for i in range(self.num_threads):
+            #         start = i * obj_number_per_thread
+            #         end = (i + 1) * obj_number_per_thread if i + 1 != self.num_threads else num_img
+            #
+            #         future_list.append(
+            #             executor.submit(
+            #                 analyze_phase,
+            #                 self.ref_phase,
+            #                 obj_img[start:end],
+            #                 self.ks,
+            #                 self.pitch
+            #             )
+            #         )
+            #
+            # for future in future_list:
+            #     obj_phase_, diff_phase_, unwrapped_phase_, depth_map_ = future.result()
+            #     self.obj_phase.extend(obj_phase_)
+            #     self.diff_phase.extend(diff_phase_)
+            #     self.unwrapped_phase.extend(unwrapped_phase_)
+            #     self.depth_map.extend(depth_map_)
 
-            self.obj_phase = []
-            self.diff_phase = []
-            self.unwrapped_phase = []
-            self.depth_map = []
+            handler = MultiProcessHandler()
 
-            with futures.ThreadPoolExecutor() as executor:
-                for i in range(self.number_of_threads):
-                    start = i * obj_number_per_thread
-                    end = (i + 1) * obj_number_per_thread if i + 1 != self.number_of_threads else num_img
+            self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = handler.analyze_mp(
+                self.ref_phase,
+                obj_img,
+                num_img,
+                self.num_threads,
+                self.ks,
+                self.pitch
+            )
 
-                    future_list.append(
-                        executor.submit(
-                            analyze_phase,
-                            self.ref_phase,
-                            obj_img[start:end],
-                            self.ks,
-                            self.pitch
-                        )
-                    )
-
-            for future in future_list:
-                obj_phase_, diff_phase_, unwrapped_phase_, depth_map_ = future.result()
-                self.obj_phase.extend(obj_phase_)
-                self.diff_phase.extend(diff_phase_)
-                self.unwrapped_phase.extend(unwrapped_phase_)
-                self.depth_map.extend(depth_map_)
         else:
             # Using a single thread
             self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = analyze_phase(
@@ -374,7 +388,7 @@ class FringeGUI:
 
         if setting_gui.is_valid:
             self.using_multithreading = setting_gui.using_multithreading
-            self.number_of_threads = setting_gui.number_of_threads
+            self.num_threads = setting_gui.number_of_threads
             self.using_hole_masks = setting_gui.using_hole_masks
 
     def select_files(self):
@@ -422,6 +436,41 @@ class FringeGUI:
             Displays the UI we created
         """
         self.window.mainloop()
+
+
+class MultiProcessHandler:
+    def analyze_mp(self, ref_phase, obj_img, num_img, num_threads, ks, pitch):
+        obj_number_per_thread = int(num_img / num_threads)
+        future_list = []
+
+        obj_phase = []
+        diff_phase = []
+        unwrapped_phase = []
+        depth_map = []
+
+        with futures.ThreadPoolExecutor() as executor:
+            for i in range(num_threads):
+                start = i * obj_number_per_thread
+                end = (i + 1) * obj_number_per_thread if i + 1 != num_threads else num_img
+
+                future_list.append(
+                    executor.submit(
+                        analyze_phase,
+                        ref_phase,
+                        obj_img[start:end],
+                        ks,
+                        pitch
+                    )
+                )
+
+        for future in future_list:
+            obj_phase_, diff_phase_, unwrapped_phase_, depth_map_ = future.result()
+            obj_phase.extend(obj_phase_)
+            diff_phase.extend(diff_phase_)
+            unwrapped_phase.extend(unwrapped_phase_)
+            depth_map.extend(depth_map_)
+
+        return obj_phase, diff_phase, unwrapped_phase, depth_map
 
 
 if __name__ == '__main__':

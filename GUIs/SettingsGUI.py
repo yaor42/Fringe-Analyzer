@@ -12,7 +12,7 @@ class SettingsGUI:
 
     def __init__(self, root):
         self.using_multithreading = root.using_multithreading
-        self.number_of_threads = root.number_of_threads
+        self.number_of_threads = root.num_threads
         self.using_hole_masks = root.using_hole_masks
 
         self.window = tk.Toplevel(root.window)
