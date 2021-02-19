@@ -18,38 +18,44 @@ class ExportGUI:
 
         self.frm_main = tk.Frame(master=self.window)
 
+        self.lbl_dir_text = tk.Label(master=self.frm_main, text="Directory")
         self.lbl_dir = tk.Label(master=self.frm_main, textvariable=self.string_var_dir, width=50, relief="sunken")
         self.btn_dir = tk.Button(master=self.frm_main, text="Choose Directory", command=self.select_dir)
-        self.lbl_dir.grid(row=0, column=0, padx=(5,1), pady=5)
-        self.btn_dir.grid(row=1, column=0, padx=5, pady=5)
+        self.lbl_dir_text.grid(row=0, column=0, padx=5, pady=5)
+        self.lbl_dir.grid(row=1, column=0, padx=(5, 1), pady=5)
+        self.btn_dir.grid(row=2, column=0, padx=5, pady=5)
 
         self.lbl_slash = tk.Label(master=self.frm_main, text='/')
-        self.lbl_slash.grid(row=0, column=1, padx=1, pady=5)
+        self.lbl_slash.grid(row=1, column=1, padx=1, pady=5)
 
+        self.lbl_filename_text = tk.Label(master=self.frm_main, text="File Name")
         self.ent_filename = tk.Entry(master=self.frm_main, textvariable=self.string_var_filename)
-        self.ent_filename.grid(row=0, column=2, padx=1, pady=5)
+        self.lbl_filename_text.grid(row=1, column=2, padx=5, pady=5)
+        self.ent_filename.grid(row=1, column=2, padx=1, pady=5)
 
         if all:
             self.lbl_num = tk.Label(master=self.frm_main, text="-n")
-            self.lbl_num.grid(row=0, column=3, padx=1, pady=5)
+            self.lbl_num.grid(row=1, column=3, pady=5)
 
+        self.lbl_filetype_text = tk.Label(master=self.frm_main, text="Extension")
+        self.lbl_filetype_text.grid(row=0, column=4, padx=5, pady=5)
         if filetype == "image":
             self.cbo_filetype = ttk.Combobox(
                 master=self.frm_main,
                 value=['.bmp', '.jpg', '.png', '.gif', '.svg'],
                 textvariable=self.string_var_filetype
             )
-            self.cbo_filetype.grid(row=0, column=4, padx=(1, 5), pady=5)
+            self.cbo_filetype.grid(row=1, column=4, padx=(1, 5), pady=5)
         else:
             self.string_var_filetype.set(".csv")
             self.lbl_filetype = tk.Label(master=self.frm_main, textvariable=self.string_var_filetype)
-            self.lbl_filetype.grid(row=0, column=4, padx=(1, 5), pady=5)
+            self.lbl_filetype.grid(row=1, column=4, padx=(1, 5), pady=5)
 
         self.frm_btn = tk.Frame(master=self.frm_main)
         self.btn_cancel = tk.Button(master=self.frm_btn, text='Cancel', command=self.cancel)
         self.btn_save = tk.Button(master=self.frm_btn, text=' Save ')
-        self.btn_cancel.grid(row=0, column=0, padx=5, pady=5)
-        self.btn_save.grid(row=0, column=1, padx=5, pady=5)
+        self.btn_cancel.grid(row=1, column=0, padx=5, pady=5)
+        self.btn_save.grid(row=1, column=1, padx=5, pady=5)
 
         if filetype == "image":
             if all:
@@ -62,7 +68,7 @@ class ExportGUI:
             else:
                 self.btn_save.configure(command=self.save_csv)
 
-        self.frm_btn.grid(row=1, column=4, padx=5, pady=5)
+        self.frm_btn.grid(row=2, column=4, padx=5, pady=5)
 
         self.frm_main.pack()
 
@@ -104,7 +110,7 @@ class ExportGUI:
     def save_csv(self):
         full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}{self.string_var_filetype.get()}"
 
-        np.savetxt(full_dir, self.root.curr_map, delimiter=",")
+        np.savetxt(full_dir, self.root.curr_map, delimiter=", ")
 
         self.cancel()
 
@@ -121,6 +127,6 @@ class ExportGUI:
         for index in range(len(map_list)):
             full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{index + 1}" \
                        f"{self.string_var_filetype.get()}"
-            np.savetxt(full_dir, map_list[index], delimiter=",")
+            np.savetxt(full_dir, map_list[index], delimiter=", ")
 
         self.cancel()
