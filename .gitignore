@@ -1,5 +1,6 @@
 .idea/
-*.pyc
 build/
 dist/
+export-test/
 main.spec
+*.pyc

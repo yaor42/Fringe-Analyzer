@@ -33,6 +33,7 @@ class PlotGUI:
         self.map = root.curr_map
 
         self.window = tk.Toplevel(root.window)
+        self.window.title("Plot")
 
         self.menu_bar = tk.Menu(master=self.window)
         self.menu_file = tk.Menu(master=self.menu_bar, tearoff=0)

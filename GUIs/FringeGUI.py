@@ -1,12 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
-from utility.FringeAnalysisFunctions import *
+
 import matplotlib
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 from concurrent import futures
+
+from GUIs.ExportGUI import ExportGUI
+from utility.FringeAnalysisFunctions import *
 
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
@@ -87,6 +90,17 @@ class FringeGUI:
 
         self.menu_bar.add_cascade(label="File", menu=self.menu_file)
         self.menu_bar.add_cascade(label="Help", menu=self.menu_help)
+
+        # Creating right click menus
+        self.right_click_menu = tk.Menu(master=self.window, tearoff=0)
+        self.right_click_menu.add_command(label="Export as Image", command=self.export_image)
+        self.right_click_menu.add_command(label="Export as CSV", command=self.export_csv)
+
+        self.right_click_menu_all = tk.Menu(master=self.window, tearoff=0)
+        self.right_click_menu_all.add_command(label="Export as Image", command=self.export_image)
+        self.right_click_menu_all.add_command(label="Export as CSV", command=self.export_csv)
+        self.right_click_menu_all.add_command(label="Export All as Image", command=self.export_image_all)
+        self.right_click_menu_all.add_command(label="Export All as CSV", command=self.export_csv_all)
 
         # Showing the menu
         self.window.config(menu=self.menu_bar)
@@ -180,15 +194,18 @@ class FringeGUI:
         # This scale object takes the place of (2, 1) which provides a slider bar to change
         # current displayed map
         self.scl_main = tk.Scale(master=self.frm_figs, from_=1, command=self.draw, orient=tk.HORIZONTAL)
-        self.scl_main.grid(row=2, column=1, stick='ew')
+        self.scl_main.grid(row=2, column=1, stick='ew', pady=(0, 17.5))
 
         # These two buttons take the place of (2, 0) and (2, 2) which provides a step changing
         # for map display
-        self.btn_next_pic = tk.Button(master=self.frm_figs, command=self.next_pic, text="->")
-        self.btn_prev_pic = tk.Button(master=self.frm_figs, command=self.prev_pic, text="<-")
+        self.btn_next_pic = tk.Button(master=self.frm_figs, command=self.next_pic, text="-->")
+        self.btn_prev_pic = tk.Button(master=self.frm_figs, command=self.prev_pic, text="<--")
 
         self.btn_next_pic.grid(row=2, column=2, stick='w')
         self.btn_prev_pic.grid(row=2, column=0, stick='e')
+
+        # # Add right mouse click menu for frm_center_mid
+        # self.frm_center_mid.bind("<Button-3>", self.do_popup)
 
         # Set the window not resizable so the layout would not be destroyed
         self.window.resizable(False, False)
@@ -309,7 +326,7 @@ class FringeGUI:
             self.ax_upper = self.fig_upper.add_subplot(111)
             self.ax_right = self.fig_right.add_subplot(111)
             self.ax_main = self.fig_main.add_subplot(111)
-            self.ax_left = self.fig_left.add_axes([0.5, 0.1, 0.15, 0.75])
+            self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
 
             self.canvas_main.mpl_connect('button_press_event', self.onclick_main)
 
@@ -317,8 +334,11 @@ class FringeGUI:
             self.canvas_right.draw()
         else:
             # if they are set, just remove the color bar for update
+            self.ax_main.remove()
+            self.ax_main = self.fig_main.add_subplot(111)
+            self.plot = None
             self.ax_left.remove()
-            self.ax_left = self.fig_left.add_axes([0.5, 0.1, 0.15, 0.75])
+            self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
 
         if self.plot is None:
             # if main display is empty, we create new display
@@ -329,6 +349,7 @@ class FringeGUI:
 
         # Create new color bar for current data
         self.fig_left.colorbar(self.plot, cax=self.ax_left)
+        self.ax_left.yaxis.set_ticks_position('left')
 
         self.canvas_main.draw()
         self.canvas_left.draw()
@@ -377,6 +398,58 @@ class FringeGUI:
 
             self.canvas_upper.draw()
             self.canvas_right.draw()
+
+        elif event.button == 3:
+            selected_map = self.cbo_map.get()
+
+            if selected_map == 'Reference Phase' or len(self.depth_map) == 1:
+                try:
+                    self.right_click_menu.tk_popup(
+                        self.frm_center_mid.winfo_rootx() + event.x,
+                        self.frm_center_mid.winfo_rooty() + self.frm_center_mid.winfo_height() - event.y
+                    )
+                finally:
+                    self.right_click_menu.grab_release()
+            else:
+                try:
+                    self.right_click_menu_all.tk_popup(
+                        self.frm_center_mid.winfo_rootx() + event.x,
+                        self.frm_center_mid.winfo_rooty() + self.frm_center_mid.winfo_height() - event.y
+                    )
+                finally:
+                    self.right_click_menu_all.grab_release()
+
+    def export_image(self):
+        """
+            Opens a new UI to select where to store the image
+        """
+        export_gui = ExportGUI(self, 'image')
+
+        self.window.wait_window(export_gui.window)
+
+    def export_csv(self):
+        """
+            Opens a new UI to select where to store the csv
+        """
+        export_gui = ExportGUI(self, 'csv')
+
+        self.window.wait_window(export_gui.window)
+
+    def export_image_all(self):
+        """
+            Opens a new UI to select where to store the image
+        """
+        export_gui = ExportGUI(self, 'image', all=True)
+
+        self.window.wait_window(export_gui.window)
+
+    def export_csv_all(self):
+        """
+            Opens a new UI to select where to store the csvs
+        """
+        export_gui = ExportGUI(self, 'csv', all=True)
+
+        self.window.wait_window(export_gui.window)
 
     def change_settings(self):
         """
