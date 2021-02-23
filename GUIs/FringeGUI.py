@@ -1,16 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
 
+from concurrent import futures
+
 import matplotlib
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from concurrent import futures
-
-from GUIs.ExportGUI import ExportGUI
 from utility.FringeAnalysisFunctions import *
 
+from GUIs.ExportGUI import ExportGUI
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
 from GUIs.SettingsGUI import SettingsGUI
@@ -204,11 +204,11 @@ class FringeGUI:
         self.btn_next_pic.grid(row=2, column=2, stick='w')
         self.btn_prev_pic.grid(row=2, column=0, stick='e')
 
-        # # Add right mouse click menu for frm_center_mid
+        # Add right mouse click menu for frm_center_mid
         # self.frm_center_mid.bind("<Button-3>", self.do_popup)
 
         # Set the window not resizable so the layout would not be destroyed
-        self.window.resizable(False, False)
+        # self.window.resizable(False, False)
 
     def next_pic(self):
         """
@@ -243,36 +243,6 @@ class FringeGUI:
         num_img = len(obj_img)
 
         if self.using_multithreading and num_img > self.num_threads:
-            # # Using multi-threading
-            # obj_number_per_thread = int(num_img / self.num_threads)
-            # future_list = []
-            #
-            # self.obj_phase = []
-            # self.diff_phase = []
-            # self.unwrapped_phase = []
-            # self.depth_map = []
-            #
-            # with futures.ThreadPoolExecutor() as executor:
-            #     for i in range(self.num_threads):
-            #         start = i * obj_number_per_thread
-            #         end = (i + 1) * obj_number_per_thread if i + 1 != self.num_threads else num_img
-            #
-            #         future_list.append(
-            #             executor.submit(
-            #                 analyze_phase,
-            #                 self.ref_phase,
-            #                 obj_img[start:end],
-            #                 self.ks,
-            #                 self.pitch
-            #             )
-            #         )
-            #
-            # for future in future_list:
-            #     obj_phase_, diff_phase_, unwrapped_phase_, depth_map_ = future.result()
-            #     self.obj_phase.extend(obj_phase_)
-            #     self.diff_phase.extend(diff_phase_)
-            #     self.unwrapped_phase.extend(unwrapped_phase_)
-            #     self.depth_map.extend(depth_map_)
 
             handler = MultiProcessHandler()
 

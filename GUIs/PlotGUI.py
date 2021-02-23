@@ -7,22 +7,9 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 from matplotlib.figure import Figure
 from matplotlib.backend_bases import key_press_handler
 from matplotlib import cm
+from utility.FringeAnalysisFunctions import *
 
 matplotlib.use('TkAgg')
-
-
-def find_range(map):
-    min_value = map[0][0]
-    max_value = map[0][0]
-
-    for row in map:
-        for elem in row:
-            if min_value > elem:
-                min_value = elem
-            if max_value < elem:
-                max_value = elem
-
-    return min_value, max_value
 
 
 class PlotGUI:

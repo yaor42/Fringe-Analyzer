@@ -1,4 +1,5 @@
 from GUIs.FringeGUI import FringeGUI
 
-main = FringeGUI()
-main.show()
+if __name__ == '__main__':
+    main = FringeGUI()
+    main.show()

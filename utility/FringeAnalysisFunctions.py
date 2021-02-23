@@ -179,3 +179,17 @@ def analyze_phase(ref_phase, obj_img, ks, pitch):
     depth_map = [phase * ks for phase in unwrapped_phase]
 
     return obj_phase, diff_phase, unwrapped_phase, depth_map
+
+
+def find_range(input_map):
+    min_value = input_map[0][0]
+    max_value = input_map[0][0]
+
+    for row in input_map:
+        for elem in row:
+            if min_value > elem:
+                min_value = elem
+            if max_value < elem:
+                max_value = elem
+
+    return min_value, max_value

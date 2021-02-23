@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askdirectory
 
+
 class ExportGUI:
     def __init__(self, root, filetype="image", all=False):
         self.root = root
