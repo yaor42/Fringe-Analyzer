@@ -1,20 +1,18 @@
 import tkinter as tk
-from tkinter import ttk
-
 from concurrent import futures
+from tkinter import ttk
 
 import matplotlib
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from utility.FringeAnalysisFunctions import *
-
+from GUIs.CalibrationGUI import CalibrationGUI
 from GUIs.ExportGUI import ExportGUI
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
 from GUIs.SettingsGUI import SettingsGUI
-from GUIs.CalibrationGUI import CalibrationGUI
+from utility.FringeAnalysisFunctions import *
 
 matplotlib.use('TkAgg')
 
@@ -42,8 +40,12 @@ class FringeGUI:
     # curr_map stores the current map show on main GUI
     curr_map = None
 
-    # Store the currently shown plot for display
+    # Store the currently shown plot and data for display
     plot = None
+    lx = None
+    ly = None
+    x_cache = 0
+    y_cache = 0
 
     # Store the max and min value from the curr_map for side plot display to set their boundary
     max_value = None
@@ -61,6 +63,11 @@ class FringeGUI:
     # k value and scale
     ks = 1.0
     scale = 1.0
+
+    # Filter options
+    using_filter = False
+    extrapolation = "nearest"
+    smooth_filter = "none"
 
     def __init__(self):
         """
@@ -97,6 +104,8 @@ class FringeGUI:
         self.right_click_menu.add_command(label="Export as CSV", command=self.export_csv)
 
         self.right_click_menu_all = tk.Menu(master=self.window, tearoff=0)
+        self.right_click_menu_all.add_command(label="Track This Point", command=self.track_point)
+        self.right_click_menu_all.add_separator()
         self.right_click_menu_all.add_command(label="Export as Image", command=self.export_image)
         self.right_click_menu_all.add_command(label="Export as CSV", command=self.export_csv)
         self.right_click_menu_all.add_command(label="Export All as Image", command=self.export_image_all)
@@ -108,9 +117,9 @@ class FringeGUI:
         # Creating the main frame for figs and utilities with configuration
         self.frm_figs = tk.Frame(master=self.window)
 
-        self.frm_figs.rowconfigure(0, weight=4)
-        self.frm_figs.rowconfigure(1, weight=1, minsize=200)
-        self.frm_figs.columnconfigure(1, weight=1, minsize=200)
+        self.frm_figs.rowconfigure(0, weight=4,)
+        self.frm_figs.rowconfigure(1, weight=1, minsize=100)
+        self.frm_figs.columnconfigure(1, weight=1, minsize=100)
         self.frm_figs.columnconfigure(2, weight=4)
 
         self.frm_figs.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -204,8 +213,9 @@ class FringeGUI:
         self.btn_next_pic.grid(row=2, column=2, stick='w')
         self.btn_prev_pic.grid(row=2, column=0, stick='e')
 
-        # Add right mouse click menu for frm_center_mid
-        # self.frm_center_mid.bind("<Button-3>", self.do_popup)
+        self.var_coord = tk.StringVar()
+        self.lbl_coord = tk.Label(master=self.window, textvariable=self.var_coord, relief="sunken")
+        self.lbl_coord.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
         # Set the window not resizable so the layout would not be destroyed
         # self.window.resizable(False, False)
@@ -298,14 +308,19 @@ class FringeGUI:
             self.ax_main = self.fig_main.add_subplot(111)
             self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
 
+            self.lx = self.ax_main.axhline(color='k')
+            self.ly = self.ax_main.axvline(color='k')
+
             self.canvas_main.mpl_connect('button_press_event', self.onclick_main)
+            self.canvas_main.mpl_connect('motion_notify_event', self.onmove_main)
 
             self.canvas_upper.draw()
             self.canvas_right.draw()
         else:
-            # if they are set, just remove the color bar for update
             self.ax_main.remove()
             self.ax_main = self.fig_main.add_subplot(111)
+            self.lx = self.ax_main.axhline(color='k')
+            self.ly = self.ax_main.axvline(color='k')
             self.plot = None
             self.ax_left.remove()
             self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
@@ -323,6 +338,21 @@ class FringeGUI:
 
         self.canvas_main.draw()
         self.canvas_left.draw()
+
+    def onmove_main(self, event):
+        if not event.inaxes:
+            return
+
+        x, y = int(event.xdata), int(event.ydata)
+        # update the line positions
+        self.lx.set_ydata(y)
+        self.ly.set_xdata(x)
+
+        # print(f"x = {x}, y = {y}")
+
+        self.var_coord.set(f"x = {x}, y = {y}, value = {self.curr_map[int(x)][int(y)]}")
+
+        self.canvas_main.draw()
 
     def onclick_main(self, event):
         """
@@ -381,6 +411,9 @@ class FringeGUI:
                 finally:
                     self.right_click_menu.grab_release()
             else:
+                self.x_cache = int(event.xdata)
+                self.y_cache = int(event.ydata)
+
                 try:
                     self.right_click_menu_all.tk_popup(
                         self.frm_center_mid.winfo_rootx() + event.x,
@@ -407,17 +440,25 @@ class FringeGUI:
 
     def export_image_all(self):
         """
-            Opens a new UI to select where to store the image
+            Opens a new UI to select where to store images
         """
-        export_gui = ExportGUI(self, 'image', all=True)
+        export_gui = ExportGUI(self, 'image', export_all=True)
 
         self.window.wait_window(export_gui.window)
 
     def export_csv_all(self):
         """
-            Opens a new UI to select where to store the csvs
+            Opens a new UI to select where to store csvs
         """
-        export_gui = ExportGUI(self, 'csv', all=True)
+        export_gui = ExportGUI(self, 'csv', export_all=True)
+
+        self.window.wait_window(export_gui.window)
+
+    def track_point(self):
+        """
+            Opens a new UI to select where to store the csv
+        """
+        export_gui = ExportGUI(self, 'csv', track=True)
 
         self.window.wait_window(export_gui.window)
 
@@ -430,9 +471,16 @@ class FringeGUI:
         self.window.wait_window(setting_gui.window)
 
         if setting_gui.is_valid:
-            self.using_multithreading = setting_gui.using_multithreading
-            self.num_threads = setting_gui.number_of_threads
+            self.ks = setting_gui.ks
+            self.scale = setting_gui.scale
             self.using_hole_masks = setting_gui.using_hole_masks
+
+            self.using_multithreading = setting_gui.using_multithreading
+            self.num_threads = setting_gui.num_threads
+
+            self.using_filter = setting_gui.using_filter
+            self.extrapolation = setting_gui.extrapolation
+            self.smooth_filter = setting_gui.smooth_filter
 
     def select_files(self):
         """

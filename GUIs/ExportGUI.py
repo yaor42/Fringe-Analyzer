@@ -1,12 +1,13 @@
-import matplotlib
-import numpy as np
 import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askdirectory
 
+import matplotlib
+import numpy as np
+
 
 class ExportGUI:
-    def __init__(self, root, filetype="image", all=False):
+    def __init__(self, root, filetype="image", export_all=False, track=False):
         self.root = root
 
         self.string_var_dir = tk.StringVar()
@@ -15,7 +16,14 @@ class ExportGUI:
         self.string_var_filetype = tk.StringVar()
 
         self.window = tk.Toplevel(master=self.root.window)
-        self.window.title("Export")
+
+        if track:
+            self.window.title(f"Point Tracking: ({self.root.x_cache}, {self.root.y_cache})")
+        else:
+            if filetype == "image":
+                self.window.title("Export as Image")
+            else:
+                self.window.title("Export as CSV")
 
         self.frm_main = tk.Frame(master=self.window)
 
@@ -34,12 +42,13 @@ class ExportGUI:
         self.lbl_filename_text.grid(row=1, column=2, padx=5, pady=5)
         self.ent_filename.grid(row=1, column=2, padx=1, pady=5)
 
-        if all:
+        if export_all:
             self.lbl_num = tk.Label(master=self.frm_main, text="-n")
             self.lbl_num.grid(row=1, column=3, pady=5)
 
         self.lbl_filetype_text = tk.Label(master=self.frm_main, text="Extension")
         self.lbl_filetype_text.grid(row=0, column=4, padx=5, pady=5)
+
         if filetype == "image":
             self.cbo_filetype = ttk.Combobox(
                 master=self.frm_main,
@@ -58,13 +67,15 @@ class ExportGUI:
         self.btn_cancel.grid(row=1, column=0, padx=5, pady=5)
         self.btn_save.grid(row=1, column=1, padx=5, pady=5)
 
-        if filetype == "image":
-            if all:
+        if track:
+            self.btn_save.configure(command=self.track_point)
+        elif filetype == "image":
+            if export_all:
                 self.btn_save.configure(command=self.save_image_all)
             else:
                 self.btn_save.configure(command=self.save_image)
         else:
-            if all:
+            if export_all:
                 self.btn_save.configure(command=self.save_csv_all)
             else:
                 self.btn_save.configure(command=self.save_csv)
@@ -129,5 +140,17 @@ class ExportGUI:
             full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{index + 1}" \
                        f"{self.string_var_filetype.get()}"
             np.savetxt(full_dir, map_list[index], delimiter=", ")
+
+        self.cancel()
+
+    def track_point(self):
+        x = self.root.x_cache
+        y = self.root.y_cache
+
+        map_list = self.root.depth_map
+        data = np.array([depth_map[x][y] for depth_map in map_list])
+
+        full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}{self.string_var_filetype.get()}"
+        np.savetxt(full_dir, data, delimiter=", ")
 
         self.cancel()

@@ -4,13 +4,13 @@ from tkinter import ttk
 
 import matplotlib
 from matplotlib import cm
-from matplotlib.patches import Circle, RegularPolygon
+from matplotlib.backend_bases import MouseButton
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from matplotlib.backend_bases import MouseButton
+from matplotlib.patches import Circle, RegularPolygon
 
-from utility.FringeAnalysisFunctions import *
 from GUIs.FileSelectionGUI import FileSelectionGui
+from utility.FringeAnalysisFunctions import *
 
 matplotlib.use('TkAgg')
 
@@ -241,7 +241,7 @@ class CalibrationGUI:
     def on_move_circle(self, event):
         if event.button == MouseButton.LEFT and self.is_drawing:
             self.update_circle(event)
-        elif event.button == MouseButton.RIGHT  and self.is_dragging:
+        elif event.button == MouseButton.RIGHT and self.is_dragging:
             self.move_circle(event)
 
     def on_release_circle(self, event):

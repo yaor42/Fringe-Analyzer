@@ -2,6 +2,7 @@ from scipy.interpolate import griddata
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import math
 
 from FringeAnalysisFunctions import *
 
@@ -54,7 +55,7 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
     x_offset = block_height / 2
     y_offset = block_length / 2
 
-    print(f"block_size = {block_length}, {block_height}")
+    print(f"block_size = {block_height}, {block_length}")
 
     points = []
     values = []
@@ -64,7 +65,7 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
             if x + x_offset < height and y + y_offset < length:
                 points.append([x + x_offset, y + y_offset])
             else:
-                points.append([(x + block_height) / 2, (y + block_length) / 2])
+                points.append([(x + height - 1) / 2, (y + length - 1) / 2])
 
             block_sum = 0
             amount = 0
@@ -81,11 +82,20 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
 
     points = np.array(points)
     values = np.array(values)
+
     grid_x, grid_y = np.mgrid[0: height, 0: length]
 
     mat_a = griddata(points, values, (grid_x, grid_y), method=method)
 
+    # print(mat_a[100])
+    # print(mat_a[:][100])
+
     mat_temp = image - mat_a
+
+    # print(mat_temp[100])
+    # print(mat_temp[:][100])
+
+    # mat_temp = np.nan_to_num(image - mat_a, nan=0)
 
     values = []
 
@@ -98,7 +108,7 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
                     tx = x + xx
                     ty = y + yy
 
-                    if tx < height and ty < length:
+                    if tx < height and ty < length and not math.isnan(mat_temp[tx][ty]):
                         if mat_temp[tx][ty] > max_value:
                             max_value = mat_temp[tx][ty]
                         elif mat_temp[tx][ty] < min_value:
@@ -107,21 +117,28 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
             values.append(max_value - min_value)
 
     values = np.array(values)
-    mat_b = griddata(points, values, (grid_x, grid_y), method=method)
-    mat_ni = mat_temp / mat_b
-    min_value, max_value = find_range(mat_ni)
+    print(values)
 
+    mat_b = griddata(points, values, (grid_x, grid_y), method=method)
+
+    # print(mat_b[100])
+    # print(mat_b[:][100])
+
+    mat_ni = mat_temp / mat_b
+
+    min_value, max_value = find_range(mat_ni)
     print(f"range      = {min_value}, {max_value}")
 
-    step = 128 / (max_value - min_value)
+    step = 255 / (max_value - min_value)
     offset = - min_value
     for x in range(0, height):
         for y in range(0, length):
-            mat_ni[x][y] = 64 + int((mat_ni[x][y] + offset) * step)
+            if math.isnan(mat_ni[x][y]):
+                mat_ni[x][y] = 0
+            else:
+                mat_ni[x][y] = int((mat_ni[x][y] + offset) * step)
 
     mat_ni = mat_ni.astype('uint8')
-
-    print(mat_ni.dtype)
 
     if blur == 'mean':
         return cv2.blur(mat_ni, ksize)
@@ -131,8 +148,10 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
         return mat_ni
 
 
-image = cv2.imread('D:\\UTD\\Fringe-Analyzer\\TestPics\\2in-ref.jpg', cv2.IMREAD_GRAYSCALE)
-processed_image = apply_filter(image, method="nearest", blur='median')
+if __name__ == "__main__":
 
-cv2.imshow("Filtered Image", processed_image)
-cv2.waitKey()
+    image = cv2.imread('D:\\UTD\\Fringe-Analyzer\\TestPics\\2in-ref.jpg', cv2.IMREAD_GRAYSCALE)
+    processed_image = apply_filter(image, method="linear", blur='median')
+
+    cv2.imshow("Filtered Image", processed_image)
+    cv2.waitKey()

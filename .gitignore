@@ -4,3 +4,4 @@ dist/
 export-test/
 main.spec
 *.pyc
+utility/test.py

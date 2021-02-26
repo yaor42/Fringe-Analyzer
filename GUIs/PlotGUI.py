@@ -1,12 +1,11 @@
 import tkinter as tk
 from tkinter.filedialog import asksaveasfilename
-import numpy as np
+
 import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.figure import Figure
-from matplotlib.backend_bases import key_press_handler
 from matplotlib import cm
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
+from matplotlib.figure import Figure
+
 from utility.FringeAnalysisFunctions import *
 
 matplotlib.use('TkAgg')

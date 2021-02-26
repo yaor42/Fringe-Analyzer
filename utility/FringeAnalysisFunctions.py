@@ -1,11 +1,11 @@
-import numpy as np
+import os
+
+import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.fftpack
 import scipy.ndimage
-import cv2
 from skimage.restoration import unwrap_phase
-from mpl_toolkits import mplot3d
-import os
 
 
 def testImage(pitch=20, dim0=1000, dim1=1250, imgName='fringe_test.png'):
@@ -121,7 +121,7 @@ def fileNameGen(prefix, index, fileType, folderName=''):
         fileName = prefix[:-2] + str(index) + '.' + fileType
     else:
         fileName = prefix[:-3] + str(index) + '.' + fileType
-    
+
     if folderName != '':
         fileName = os.path.join(os.getcwd(), folderName, fileName);
     # print(fileName)
@@ -182,8 +182,8 @@ def analyze_phase(ref_phase, obj_img, ks, pitch):
 
 
 def find_range(input_map):
-    min_value = input_map[0][0]
-    max_value = input_map[0][0]
+    min_value = float('inf')
+    max_value = -float('inf')
 
     for row in input_map:
         for elem in row:
