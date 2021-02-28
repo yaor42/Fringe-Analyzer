@@ -114,15 +114,19 @@ class FringeGUI:
         # Showing the menu
         self.window.config(menu=self.menu_bar)
 
-        # Creating the main frame for figs and utilities with configuration
-        self.frm_figs = tk.Frame(master=self.window)
+        self.frm_main = tk.Frame(master=self.window)
+        self.frm_main.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.frm_figs.rowconfigure(0, weight=4,)
+        # Creating the main frame for figs and utilities with configuration
+        self.frm_figs = tk.Frame(master=self.frm_main)
+
+        self.frm_figs.rowconfigure(0, weight=4)
         self.frm_figs.rowconfigure(1, weight=1, minsize=100)
         self.frm_figs.columnconfigure(1, weight=1, minsize=100)
         self.frm_figs.columnconfigure(2, weight=4)
 
-        self.frm_figs.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        # self.frm_figs.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.frm_figs.grid(row=0, column=0)
 
         """
             Creating the frame in gird at (0, 2) which holds a combo box along with a button that
@@ -173,10 +177,10 @@ class FringeGUI:
         self.frm_left_mid.grid(row=1, column=0)
 
         # Create and configure figure objects with utilities provided by matplotlib
-        self.fig_upper = Figure(figsize=(5, 3))
-        self.fig_right = Figure(figsize=(3, 5))
-        self.fig_main = Figure(figsize=(5, 5))
-        self.fig_left = Figure(figsize=(1, 5))
+        self.fig_upper = Figure(figsize=(5, 3), dpi=75)
+        self.fig_right = Figure(figsize=(3, 5), dpi=75)
+        self.fig_main = Figure(figsize=(5, 5), dpi=75)
+        self.fig_left = Figure(figsize=(1, 5), dpi=75)
 
         self.fig_upper.patch.set_facecolor('#F0F0F0')
         self.fig_right.patch.set_facecolor('#F0F0F0')
@@ -213,12 +217,39 @@ class FringeGUI:
         self.btn_next_pic.grid(row=2, column=2, stick='w')
         self.btn_prev_pic.grid(row=2, column=0, stick='e')
 
+        # UI for tracking utilities
+        self.frm_track = tk.Frame(master=self.frm_main)
+
+        self.frm_track.grid(row=0, column=1, padx=5, pady=5, sticky=tk.NSEW)
+
+        self.frm_table = tk.Frame(master=self.frm_track)
+
+        self.trv_track = ttk.Treeview(master=self.frm_table, columns=('x', 'y', 'value'))
+        self.vsb_track = tk.Scrollbar(master=self.frm_table, orient='vertical', command=self.trv_track.yview)
+        self.trv_track.configure(yscrollcommand=self.vsb_track.set)
+
+        self.trv_track.column('#0', stretch=tk.NO, minwidth=0, width=0)
+        self.trv_track.heading("x", text='x')
+        self.trv_track.column("x", anchor='c', width=64)
+        self.trv_track.heading("y", text='y')
+        self.trv_track.column("y", anchor='c', width=64)
+        self.trv_track.heading("value", text='value')
+        self.trv_track.column("value", anchor='c', width=128)
+
+        self.trv_track.pack(side='left', fill='y', expand=True)
+        self.vsb_track.pack(side='right', fill='both', expand=True)
+
+        self.frm_table.pack(fill='both', expand=True)
+
+        self.btn_track = tk.Button(master=self.frm_track, text='Export..', command=self.export_points)
+        self.btn_track.pack(side=tk.RIGHT, padx=5, pady=5)
+
         self.var_coord = tk.StringVar()
         self.lbl_coord = tk.Label(master=self.window, textvariable=self.var_coord, relief="sunken")
         self.lbl_coord.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
         # Set the window not resizable so the layout would not be destroyed
-        # self.window.resizable(False, False)
+        self.window.resizable(False, False)
 
     def next_pic(self):
         """
@@ -325,12 +356,18 @@ class FringeGUI:
             self.ax_left.remove()
             self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
 
-        if self.plot is None:
-            # if main display is empty, we create new display
-            self.plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
-        else:
-            # else, we just swap the data
-            self.plot.set_data(self.curr_map)
+        # if self.plot is None:
+            # # if main display is empty, we create new display
+        self.plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
+
+        for item in self.trv_track.get_children():
+            coord = item.split(',')
+
+            x = int(coord[0])
+            y = int(coord[1])
+
+            self.trv_track.delete(item)
+            self.trv_track.insert('', 'end', f'{x}, {y}', values=(x, y, f'{self.curr_map[x][y]:.5}'))
 
         # Create new color bar for current data
         self.fig_left.colorbar(self.plot, cax=self.ax_left)
@@ -454,13 +491,20 @@ class FringeGUI:
 
         self.window.wait_window(export_gui.window)
 
-    def track_point(self):
+    def export_points(self):
         """
-            Opens a new UI to select where to store the csv
+            Opens a new UI to select where to store csvs from point tracking
         """
         export_gui = ExportGUI(self, 'csv', track=True)
 
         self.window.wait_window(export_gui.window)
+
+    def track_point(self):
+        """
+            Add point into tracking list
+        """
+        self.trv_track.insert('', 'end', f'{self.x_cache}, {self.y_cache}',
+                              values=(self.x_cache, self.y_cache, f'{self.curr_map[self.x_cache][self.y_cache]:.5}'))
 
     def change_settings(self):
         """

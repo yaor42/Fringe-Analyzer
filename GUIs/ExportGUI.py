@@ -18,7 +18,7 @@ class ExportGUI:
         self.window = tk.Toplevel(master=self.root.window)
 
         if track:
-            self.window.title(f"Point Tracking: ({self.root.x_cache}, {self.root.y_cache})")
+            self.window.title(f"Point Tracking")
         else:
             if filetype == "image":
                 self.window.title("Export as Image")
@@ -42,7 +42,10 @@ class ExportGUI:
         self.lbl_filename_text.grid(row=1, column=2, padx=5, pady=5)
         self.ent_filename.grid(row=1, column=2, padx=1, pady=5)
 
-        if export_all:
+        if track:
+            self.lbl_coord = tk.Label(master=self.frm_main, text="-x,y")
+            self.lbl_coord.grid(row=1, column=3, pady=5)
+        elif export_all:
             self.lbl_num = tk.Label(master=self.frm_main, text="-n")
             self.lbl_num.grid(row=1, column=3, pady=5)
 
@@ -144,13 +147,19 @@ class ExportGUI:
         self.cancel()
 
     def track_point(self):
-        x = self.root.x_cache
-        y = self.root.y_cache
-
         map_list = self.root.depth_map
-        data = np.array([depth_map[x][y] for depth_map in map_list])
+        tracking_list = self.root.trv_track.get_children()
 
-        full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}{self.string_var_filetype.get()}"
-        np.savetxt(full_dir, data, delimiter=", ")
+        for item in tracking_list:
+            coord = item.split(',')
+
+            x = int(coord[0])
+            y = int(coord[1])
+
+            data = np.array([depth_map[x][y] for depth_map in map_list])
+
+            full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{x},{y}" \
+                       f"{self.string_var_filetype.get()}"
+            np.savetxt(full_dir, data, delimiter=", ")
 
         self.cancel()
