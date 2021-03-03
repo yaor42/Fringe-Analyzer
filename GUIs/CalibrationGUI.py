@@ -27,7 +27,11 @@ class CalibrationGUI:
     ks = 1.0
     scale = 1.0
 
+    obj_image = None
     unwrapped_phase = None
+
+    plot = None
+    ax = None
 
     # State of dragging a circle or a square
     is_drawing = False
@@ -68,34 +72,30 @@ class CalibrationGUI:
         self.frm_left = tk.Frame(master=self.window)
         self.frm_right = tk.Frame(master=self.window)
 
-        self.fig = Figure(figsize=(5, 5))
-        self.fig.patch.set_facecolor('#F0F0F0')
+        self.fig = Figure(figsize=(5, 5), facecolor='#F0F0F0')
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.frm_left)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.ax = None
-        self.plot = None
-
         self.frm_left.grid(row=0, column=0, ipadx=5, ipady=5)
 
-        self.cbo_map = ttk.Combobox(
-            master=self.frm_right,
-            value=[
-                'Circle',
-                'Pyramid'
-            ]
-        )
-        self.cbo_map.bind("<<ComboboxSelected>>", self.bind)
+        self.cbo_display = ttk.Combobox(master=self.frm_right, value=['Original Image', 'Default Depth Map'])
+        self.cbo_display.bind("<<ComboboxSelected>>", self.set_display)
+        self.cbo_display.current(0)
+
+        self.cbo_display.grid(row=0, column=0, ipadx=5, ipady=5)
+
+        self.cbo_map = ttk.Combobox(master=self.frm_right, value=['Circle', 'Pyramid'])
+        self.cbo_map.bind("<<ComboboxSelected>>", self.set_reference)
         self.cbo_map.current(0)
 
-        self.cbo_map.grid(row=0, column=0, ipadx=5, ipady=5)
+        self.cbo_map.grid(row=1, column=0, ipadx=5, ipady=5)
 
         self.str_var_info = tk.StringVar()
         self.str_var_info.set("\n\n")
         self.lbl_info = tk.Label(master=self.frm_right, textvariable=self.str_var_info, width=25)
 
-        self.lbl_info.grid(row=1, column=0, ipadx=5, ipady=5)
+        self.lbl_info.grid(row=2, column=0, ipadx=5, ipady=5)
 
         self.frm_input = tk.Frame(master=self.frm_right)
 
@@ -112,10 +112,10 @@ class CalibrationGUI:
         self.ent_input_1.grid(row=0, column=1)
         self.ent_input_2.grid(row=1, column=1)
 
-        self.frm_input.grid(row=2, column=0, ipadx=5, ipady=5)
+        self.frm_input.grid(row=3, column=0, ipadx=5, ipady=5)
 
         self.btn_analyze = tk.Button(master=self.frm_right, text="Calibration", command=self.calibration)
-        self.btn_analyze.grid(row=3, column=0, ipadx=5, ipady=5)
+        self.btn_analyze.grid(row=4, column=0, ipadx=5, ipady=5)
 
         self.str_var_ks = tk.StringVar()
         self.str_var_ks.set(
@@ -124,7 +124,7 @@ class CalibrationGUI:
         )
         self.lbl_current_ks = tk.Label(master=self.frm_right, textvariable=self.str_var_ks)
 
-        self.lbl_current_ks.grid(row=4, column=0, ipadx=5, ipady=5)
+        self.lbl_current_ks.grid(row=5, column=0, ipadx=5, ipady=5)
 
         self.frm_right.grid(row=0, column=1, ipadx=5, ipady=5)
 
@@ -138,7 +138,7 @@ class CalibrationGUI:
 
         self.frm_submit.grid(row=1, column=1, ipadx=5, ipady=5)
 
-        self.bind()
+        self.set_reference()
 
         # Set the window not resizable so the layout would not be destroyed
         self.window.resizable(False, False)
@@ -151,6 +151,12 @@ class CalibrationGUI:
         self.window.lift()
 
         if file_gui.is_valid:
+            if self.patch_selected is not None and self.patch_center is not None:
+                self.patch_selected.remove()
+                self.patch_center.remove()
+                self.patch_selected = None
+                self.patch_center = None
+
             self.ref_file = file_gui.ref_file
             self.obj_file = file_gui.obj_file
 
@@ -160,23 +166,40 @@ class CalibrationGUI:
         ref_img = cv2.imread(self.ref_file, cv2.IMREAD_GRAYSCALE)
         obj_img = [cv2.imread(self.obj_file[0], cv2.IMREAD_GRAYSCALE)]
 
+        self.obj_image = obj_img[0]
+
         pitch = getPitch(ref_img)
 
         ref_phase = fiveStepShift(ref_img, pitch, maskHoles=self.using_hole_masks)
 
-        _, _, [self.unwrapped_phase], _ = analyze_phase(
-            ref_phase,
-            obj_img,
-            self.ks,
-            pitch
-        )
+        _, _, [self.unwrapped_phase], _ = analyze_phase(ref_phase, obj_img, self.ks, pitch)
 
         self.draw()
 
     def draw(self):
         if self.ax is None:
             self.ax = self.fig.add_subplot(111)
-        self.plot = self.ax.imshow(self.unwrapped_phase, cmap=cm.turbo)
+        else:
+            self.ax.remove()
+            self.ax = self.fig.add_subplot(111)
+
+        if self.cbo_display.get() == 'Original Image':
+            self.plot = self.ax.imshow(self.obj_image, cmap=cm.gray)
+        else:
+            self.plot = self.ax.imshow(self.unwrapped_phase, cmap=cm.turbo)
+
+        if self.patch_selected is not None and self.patch_center is not None:
+            self.patch_selected.remove()
+            self.patch_center.remove()
+
+            self.patch_selected = Circle((self.center_x, self.center_y),
+                                         self.radius, facecolor='none', edgecolor='black')
+            self.patch_selected = self.ax.add_patch(self.patch_selected)
+
+            self.patch_center = Circle((self.center_x, self.center_y),
+                                       2, facecolor='black', edgecolor='black', hatch='x')
+            self.patch_center = self.ax.add_patch(self.patch_center)
+
         self.canvas.draw()
 
     def calibration(self):
@@ -192,7 +215,10 @@ class CalibrationGUI:
             f"Scale : {self.scale:.3f}"
         )
 
-    def bind(self, _event=None):
+    def set_display(self, _event=None):
+        self.draw()
+
+    def set_reference(self, _event=None):
         if self.cid_move is not None:
             self.canvas.mpl_disconnect(self.cid_press)
             self.canvas.mpl_disconnect(self.cid_move)
@@ -216,10 +242,8 @@ class CalibrationGUI:
     def on_press_circle(self, event):
         # print(event.button)
         if event.button == MouseButton.LEFT:
-            if self.patch_selected is not None:
+            if self.patch_selected is not None and self.patch_center is not None:
                 self.patch_selected.remove()
-
-            if self.patch_center is not None:
                 self.patch_center.remove()
 
             self.is_drawing = True

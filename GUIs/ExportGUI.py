@@ -2,8 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askdirectory
 
-import matplotlib
 import numpy as np
+from matplotlib import cm
+from matplotlib.figure import Figure
 
 
 class ExportGUI:
@@ -98,10 +99,19 @@ class ExportGUI:
     def cancel(self):
         self.window.destroy()
 
+    def draw_and_save(self, full_dir, map):
+        fig = Figure(figsize=(5, 3), dpi=100)
+        ax = fig.add_subplot(111)
+
+        fig.colorbar(ax.imshow(map, cmap=cm.turbo))
+
+        fig.savefig(full_dir)
+
     def save_image(self):
         full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}{self.string_var_filetype.get()}"
 
-        matplotlib.image.imsave(full_dir, self.root.curr_map)
+        # matplotlib.image.imsave(full_dir, self.root.curr_map)
+        self.draw_and_save(full_dir, self.root.curr_map)
 
         self.cancel()
 
@@ -118,7 +128,8 @@ class ExportGUI:
         for index in range(len(map_list)):
             full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{index + 1}" \
                        f"{self.string_var_filetype.get()}"
-            matplotlib.image.imsave(full_dir, map_list[index])
+            # matplotlib.image.imsave(full_dir, map_list[index])
+            self.draw_and_save(full_dir, map_list[index])
 
         self.cancel()
 

@@ -1,4 +1,3 @@
-from matplotlib import cm
 from utility.FringeAnalysisFunctions import *
 
 ks = 1  # factor from phase to depth

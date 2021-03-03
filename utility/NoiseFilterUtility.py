@@ -1,8 +1,6 @@
-from scipy.interpolate import griddata
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
 import math
+
+from scipy.interpolate import griddata
 
 from FringeAnalysisFunctions import *
 
@@ -149,9 +147,8 @@ def apply_filter(image, method='nearest', blur="mean", ksize=(3, 3)):
 
 
 if __name__ == "__main__":
-
     image = cv2.imread('D:\\UTD\\Fringe-Analyzer\\TestPics\\2in-ref.jpg', cv2.IMREAD_GRAYSCALE)
-    processed_image = apply_filter(image, method="linear", blur='median')
+    processed_image = apply_filter(image, method="cubic", blur='median')
 
     cv2.imshow("Filtered Image", processed_image)
     cv2.waitKey()

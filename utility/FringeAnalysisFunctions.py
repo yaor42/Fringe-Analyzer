@@ -172,11 +172,34 @@ def unwrapPhase(diffPhase):
     return unwrappedPhase
 
 
-def analyze_phase(ref_phase, obj_img, ks, pitch):
-    obj_phase = [fiveStepShift(img, pitch) for img in obj_img]
-    diff_phase = [phase - ref_phase for phase in obj_phase]
-    unwrapped_phase = [unwrapPhase(phase) for phase in diff_phase]
-    depth_map = [phase * ks for phase in unwrapped_phase]
+def analyze_phase_mt(ref_phase, obj_img, ks, pitch):
+    obj_phase = []
+    diff_phase = []
+    unwrapped_phase = []
+    depth_map = []
+
+    for img in obj_img:
+        obj_phase.append(fiveStepShift(img, pitch))
+        diff_phase.append(obj_phase[-1] - ref_phase)
+        unwrapped_phase.append(unwrapPhase(diff_phase[-1]))
+        depth_map.append(unwrapped_phase[-1] * ks)
+
+    return obj_phase, diff_phase, unwrapped_phase, depth_map
+
+
+def analyze_phase(root, ref_phase, obj_img, ks, pitch):
+    obj_phase = []
+    diff_phase = []
+    unwrapped_phase = []
+    depth_map = []
+
+    for img in obj_img:
+        obj_phase.append(fiveStepShift(img, pitch))
+        diff_phase.append(obj_phase[-1] - ref_phase)
+        unwrapped_phase.append(unwrapPhase(diff_phase[-1]))
+        depth_map.append(unwrapped_phase[-1] * ks)
+
+        root.finish_one()
 
     return obj_phase, diff_phase, unwrapped_phase, depth_map
 

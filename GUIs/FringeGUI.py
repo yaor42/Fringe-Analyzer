@@ -35,6 +35,10 @@ class FringeGUI:
     unwrapped_phase = None
     depth_map = None
 
+    # counter for progress display
+    counter = 0
+    num_img = 0
+
     # utility for analyzing
     pitch = None
 
@@ -180,15 +184,13 @@ class FringeGUI:
         self.frm_left_mid.grid(row=1, column=0)
 
         # Create and configure figure objects with utilities provided by matplotlib
-        self.fig_upper = Figure(figsize=(5, 3), dpi=75)
-        self.fig_right = Figure(figsize=(3, 5), dpi=75)
-        self.fig_main = Figure(figsize=(5, 5), dpi=75)
-        self.fig_left = Figure(figsize=(1, 5), dpi=75)
+        self.fig_upper = Figure(figsize=(5, 3), dpi=75, facecolor='#F0F0F0')
+        self.fig_right = Figure(figsize=(3, 5), dpi=75, facecolor='#F0F0F0')
+        self.fig_main = Figure(figsize=(5, 5), dpi=75, facecolor='#F0F0F0')
+        self.fig_left = Figure(figsize=(1, 5), dpi=75, facecolor='#F0F0F0')
 
-        self.fig_upper.patch.set_facecolor('#F0F0F0')
-        self.fig_right.patch.set_facecolor('#F0F0F0')
-        self.fig_main.patch.set_facecolor('#F0F0F0')
-        self.fig_left.patch.set_facecolor('#F0F0F0')
+        self.fig_upper.subplots_adjust(bottom=0.15)
+        self.fig_right.subplots_adjust(left=0.3)
 
         # Pre-setup for axes object from those figures providing manipulation for plots drawn
         self.ax_upper = None
@@ -245,7 +247,7 @@ class FringeGUI:
         self.frm_table.pack(fill='both', expand=True)
 
         self.btn_stop_track = tk.Button(master=self.frm_track, text='Delete Point(s)', command=self.stop_track)
-        self.btn_stop_track.pack(side=tk.LEFT, padx=5, pady=5)
+        self.btn_stop_track.pack(side=tk.LEFT, pady=5)
         self.btn_track = tk.Button(master=self.frm_track, text='Export..', command=self.export_points)
         self.btn_track.pack(side=tk.RIGHT, padx=5, pady=5)
 
@@ -274,6 +276,10 @@ class FringeGUI:
         if temp - 1 >= 1:
             self.scl_main.set(temp - 1)
 
+    def finish_one(self):
+        self.counter += 1
+        self.window.title(f"Fringe Analysis Prototype - Processing {self.counter}/{self.num_img}")
+
     def analyze(self):
         """
             Actually analyzing the input file(s) with multi-threading or not
@@ -286,29 +292,32 @@ class FringeGUI:
 
         self.ref_phase = fiveStepShift(ref_img, self.pitch, maskHoles=self.using_hole_masks)
 
-        num_img = len(obj_img)
+        self.counter = 0
+        self.num_img = len(obj_img)
 
-        if self.using_multithreading and num_img > self.num_threads:
+        self.window.title(f"Fringe Analysis Prototype - Processing {self.counter}/{self.num_img}")
 
+        if self.using_multithreading and self.num_img > self.num_threads:
             handler = MultiProcessHandler()
-
             self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = handler.analyze_mp(
                 self.ref_phase,
                 obj_img,
-                num_img,
+                self.num_img,
                 self.num_threads,
                 self.ks,
                 self.pitch
             )
-
         else:
             # Using a single thread
             self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = analyze_phase(
+                self,
                 self.ref_phase,
                 obj_img,
                 self.ks,
                 self.pitch
             )
+
+        self.window.title("Fringe Analysis Prototype - Done!")
 
     def draw(self, _=None):
         """
@@ -340,7 +349,13 @@ class FringeGUI:
             # if axes are not already set, we create them here and set up function binding
             self.ax_added = True
             self.ax_upper = self.fig_upper.add_subplot(111)
+            self.ax_upper.set_xlabel('x axis')
+            self.ax_upper.set_ylabel('depth')
+
             self.ax_right = self.fig_right.add_subplot(111)
+            self.ax_right.set_xlabel('depth')
+            self.ax_right.set_ylabel('y axis')
+
             self.ax_main = self.fig_main.add_subplot(111)
             self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
 
@@ -362,7 +377,7 @@ class FringeGUI:
             self.ax_left = self.fig_left.add_axes([0.6, 0.1, 0.15, 0.75])
 
         # if self.plot is None:
-            # # if main display is empty, we create new display
+        # # if main display is empty, we create new display
         self.plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
 
         for value in self.patch_dict.values():
@@ -442,9 +457,13 @@ class FringeGUI:
             self.ax_upper.plot(axis_y, y)
             self.ax_right.plot(x, axis_x)
 
+            self.ax_upper.set_xlabel('x axis')
+            self.ax_upper.set_ylabel('depth')
             self.ax_upper.set_xlim((- x_offset, x_offset + len(y) - 1))
             self.ax_upper.set_ylim((self.min_value, self.max_value))
 
+            self.ax_right.set_xlabel('depth')
+            self.ax_right.set_ylabel('y axis')
             self.ax_right.set_xlim((self.min_value, self.max_value))
             self.ax_right.set_ylim((y_offset + len(x) - 1, - y_offset))
 
@@ -568,8 +587,20 @@ class FringeGUI:
         self.window.wait_window(file_gui.window)
 
         if file_gui.is_valid:
+            for key, value in self.patch_dict.items():
+                value.remove()
+                self.trv_track.delete(key)
+            self.patch_dict = {}
+
             self.ref_file = file_gui.ref_file
             self.obj_file = file_gui.obj_file
+
+            if len(self.obj_file) == 1:
+                self.btn_next_pic['state'] = tk.DISABLED
+                self.btn_prev_pic['state'] = tk.DISABLED
+            else:
+                self.btn_next_pic['state'] = tk.ACTIVE
+                self.btn_prev_pic['state'] = tk.ACTIVE
 
             self.analyze()
 
@@ -623,7 +654,7 @@ class MultiProcessHandler:
 
                 future_list.append(
                     executor.submit(
-                        analyze_phase,
+                        analyze_phase_mt,
                         ref_phase,
                         obj_img[start:end],
                         ks,
