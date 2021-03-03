@@ -172,7 +172,7 @@ class CalibrationGUI:
 
         ref_phase = fiveStepShift(ref_img, pitch, maskHoles=self.using_hole_masks)
 
-        _, _, [self.unwrapped_phase], _ = analyze_phase(ref_phase, obj_img, self.ks, pitch)
+        _, _, [self.unwrapped_phase], _ = analyze_phase_mt(ref_phase, obj_img, self.ks, pitch)
 
         self.draw()
 
