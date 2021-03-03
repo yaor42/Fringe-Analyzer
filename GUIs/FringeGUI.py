@@ -6,6 +6,7 @@ import matplotlib
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from matplotlib.patches import Circle
 
 from GUIs.CalibrationGUI import CalibrationGUI
 from GUIs.ExportGUI import ExportGUI
@@ -46,6 +47,8 @@ class FringeGUI:
     ly = None
     x_cache = 0
     y_cache = 0
+
+    patch_dict = {}
 
     # Store the max and min value from the curr_map for side plot display to set their boundary
     max_value = None
@@ -241,6 +244,8 @@ class FringeGUI:
 
         self.frm_table.pack(fill='both', expand=True)
 
+        self.btn_stop_track = tk.Button(master=self.frm_track, text='Delete Point(s)', command=self.stop_track)
+        self.btn_stop_track.pack(side=tk.LEFT, padx=5, pady=5)
         self.btn_track = tk.Button(master=self.frm_track, text='Export..', command=self.export_points)
         self.btn_track.pack(side=tk.RIGHT, padx=5, pady=5)
 
@@ -360,6 +365,12 @@ class FringeGUI:
             # # if main display is empty, we create new display
         self.plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
 
+        for value in self.patch_dict.values():
+            if value is not None:
+                value.remove()
+
+        self.patch_dict = {}
+
         for item in self.trv_track.get_children():
             coord = item.split(',')
 
@@ -368,6 +379,8 @@ class FringeGUI:
 
             self.trv_track.delete(item)
             self.trv_track.insert('', 'end', f'{x}, {y}', values=(x, y, f'{self.curr_map[x][y]:.5}'))
+            self.patch_dict[f'{x}, {y}'] = self.ax_main.add_patch(Circle((x, y), 4, facecolor='none',
+                                                                         edgecolor='black', fill=True))
 
         # Create new color bar for current data
         self.fig_left.colorbar(self.plot, cax=self.ax_left)
@@ -401,6 +414,8 @@ class FringeGUI:
         # print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
         #       ('double' if event.dblclick else 'single', event.button,
         #        event.x, event.y, event.xdata, event.ydata))
+        if event.xdata is None or event.ydata is None:
+            pass
 
         if event.button == 1:
             height = len(self.curr_map)
@@ -495,16 +510,34 @@ class FringeGUI:
         """
             Opens a new UI to select where to store csvs from point tracking
         """
-        export_gui = ExportGUI(self, 'csv', track=True)
+        if len(self.trv_track.get_children()) != 0:
+            export_gui = ExportGUI(self, 'csv', track=True)
 
-        self.window.wait_window(export_gui.window)
+            self.window.wait_window(export_gui.window)
 
     def track_point(self):
         """
-            Add point into tracking list
+            Add point into the tracking list
         """
-        self.trv_track.insert('', 'end', f'{self.x_cache}, {self.y_cache}',
+        hash_string = f'{self.x_cache}, {self.y_cache}'
+
+        self.trv_track.insert('', 'end', hash_string,
                               values=(self.x_cache, self.y_cache, f'{self.curr_map[self.x_cache][self.y_cache]:.5}'))
+        self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((self.x_cache, self.y_cache), 4,
+                                                                     facecolor='none', edgecolor='black', fill=True))
+
+    def stop_track(self):
+        """
+            Delete the point selected from the tracking list
+        """
+        selection = self.trv_track.selection()
+
+        for point in selection:
+            self.patch_dict[point].remove()
+            self.patch_dict[point] = None
+            self.trv_track.delete(point)
+
+        self.canvas_main.draw()
 
     def change_settings(self):
         """
