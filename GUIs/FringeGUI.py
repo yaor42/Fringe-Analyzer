@@ -1,3 +1,5 @@
+import json
+import multiprocessing
 import tkinter as tk
 from concurrent import futures
 from tkinter import ttk
@@ -86,6 +88,8 @@ class FringeGUI:
 
             To understand what every grid does, please check the comments in the function.
         """
+
+        self.import_settings()
 
         self.window = tk.Tk()
         self.window.title("Fringe Analysis Prototype")
@@ -257,6 +261,7 @@ class FringeGUI:
 
         # Set the window not resizable so the layout would not be destroyed
         self.window.resizable(False, False)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def next_pic(self):
         """
@@ -630,11 +635,37 @@ class FringeGUI:
             self.ks = cal_gui.ks
             self.scale = cal_gui.scale
 
+    def on_close(self):
+        settings = {
+            "multithreading": self.using_multithreading,
+            "num_threads": self.num_threads,
+            "using_hole_masks": self.using_hole_masks,
+            "ks": self.ks,
+            "scale": self.scale
+        }
+
+        settings_json = json.dumps(settings)
+        with open("settings.json", 'w') as file:
+            file.write(settings_json)
+
+        self.window.destroy()
+
     def show(self):
         """
             Displays the UI we created
         """
         self.window.mainloop()
+
+    def import_settings(self):
+        if os.path.exists("settings.json"):
+            with open("settings.json", 'r') as file:
+                settings_json = json.load(file)
+
+                self.using_multithreading = settings_json['multithreading']
+                self.num_threads = min(multiprocessing.cpu_count(), settings_json['num_threads'])
+                self.using_hole_masks = settings_json['using_hole_masks']
+                self.ks = settings_json['ks']
+                self.scale = settings_json['scale']
 
 
 class MultiProcessHandler:

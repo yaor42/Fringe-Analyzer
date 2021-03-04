@@ -5,3 +5,4 @@ export-test/
 main.spec
 *.pyc
 utility/test.py
+settings.json

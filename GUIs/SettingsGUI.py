@@ -24,9 +24,9 @@ class SettingsGUI:
         self.using_hole_masks = root.using_hole_masks
         self.ks = root.ks
         self.scale = root.scale
-        self.using_filter = root.using_filter
-        self.extrapolation = root.extrapolation
-        self.smooth_filter = root.smooth_filter
+        # self.using_filter = root.using_filter
+        # self.extrapolation = root.extrapolation
+        # self.smooth_filter = root.smooth_filter
 
         self.window = tk.Toplevel(root.window)
         self.window.title('Settings')
@@ -36,18 +36,18 @@ class SettingsGUI:
         self.var_hole_masks = tk.BooleanVar()
         self.var_multithreading = tk.BooleanVar()
         self.var_num_threads = tk.IntVar()
-        self.var_using_filter = tk.BooleanVar()
-        self.var_extrapolation = tk.StringVar()
-        self.var_smooth_filter = tk.StringVar()
+        # self.var_using_filter = tk.BooleanVar()
+        # self.var_extrapolation = tk.StringVar()
+        # self.var_smooth_filter = tk.StringVar()
 
         self.var_ks.set(str(self.ks))
         self.var_scale.set(str(self.scale))
         self.var_hole_masks.set(self.using_hole_masks)
         self.var_multithreading.set(self.using_multithreading)
         self.var_num_threads.set(self.num_threads)
-        self.var_using_filter.set(self.using_filter)
-        self.var_extrapolation.set(self.extrapolation)
-        self.var_smooth_filter.set(self.smooth_filter)
+        # self.var_using_filter.set(self.using_filter)
+        # self.var_extrapolation.set(self.extrapolation)
+        # self.var_smooth_filter.set(self.smooth_filter)
 
         self.lbl_ks = tk.Label(master=self.window, text='ks Value: ')
         self.lbl_scale = tk.Label(master=self.window, text='Scale: ')
@@ -127,9 +127,9 @@ class SettingsGUI:
         self.using_multithreading = self.var_multithreading.get()
         self.num_threads = self.var_num_threads.get()
 
-        self.using_filter = self.var_using_filter.get()
-        self.extrapolation = self.var_extrapolation.get()
-        self.smooth_filter = self.var_smooth_filter.get()
+        # self.using_filter = self.var_using_filter.get()
+        # self.extrapolation = self.var_extrapolation.get()
+        # self.smooth_filter = self.var_smooth_filter.get()
 
         # print(self.using_multithreading)
         # print(self.number_of_threads)
