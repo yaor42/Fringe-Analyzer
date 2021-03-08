@@ -204,7 +204,7 @@ class CalibrationGUI:
 
     def calibration(self):
         (h, l) = self.unwrapped_phase.shape
-        print(f"{h}, {l}")
+        # print(f"{h}, {l}")
         x = int(self.center_x)
         y = int(self.center_y)
         radius_square = self.radius ** 2
@@ -219,7 +219,7 @@ class CalibrationGUI:
 
         base = sum / num
 
-        print(base)
+        # print(base)
 
         if self.cbo_map.get() == "Circle":
             self.ks = float(self.ent_input_2.get()) / (self.unwrapped_phase[y][x] - base)
