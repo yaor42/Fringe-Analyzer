@@ -167,7 +167,7 @@ class ExportGUI:
             x = int(coord[0])
             y = int(coord[1])
 
-            data = np.array([depth_map[x][y] for depth_map in map_list])
+            data = np.array([depth_map[y][x] for depth_map in map_list])
 
             full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{x},{y}" \
                        f"{self.string_var_filetype.get()}"

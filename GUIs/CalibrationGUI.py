@@ -92,7 +92,7 @@ class CalibrationGUI:
         self.cbo_map.grid(row=1, column=0, ipadx=5, ipady=5)
 
         self.str_var_info = tk.StringVar()
-        self.str_var_info.set("\n\n")
+        self.str_var_info.set("\n\n\n\n")
         self.lbl_info = tk.Label(master=self.frm_right, textvariable=self.str_var_info, width=25)
 
         self.lbl_info.grid(row=2, column=0, ipadx=5, ipady=5)
@@ -204,10 +204,10 @@ class CalibrationGUI:
 
     def calibration(self):
         if self.cbo_map.get() == "Circle":
-            self.ks = float(self.ent_input_2.get()) / self.unwrapped_phase[int(self.center_x)][int(self.center_y)]
+            self.ks = float(self.ent_input_2.get()) / self.unwrapped_phase[int(self.center_y)][int(self.center_x)]
             self.scale = float(self.ent_input_1.get()) / self.radius
         else:
-            self.ks = float(self.ent_input_2.get()) / self.unwrapped_phase[int(self.center_x)][int(self.center_y)]
+            self.ks = float(self.ent_input_2.get()) / self.unwrapped_phase[int(self.center_y)][int(self.center_x)]
             self.scale = float(self.ent_input_1.get()) / self.radius / math.sqrt(2)
 
         self.str_var_ks.set(
@@ -295,8 +295,9 @@ class CalibrationGUI:
         self.patch_center = self.ax.add_patch(self.patch_center)
 
         self.str_var_info.set(
-            f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
-            f"Radius : {self.radius:.3f}\n"
+            f"Center Depth: {self.unwrapped_phase[int(self.center_y)][int(self.center_x)]:.3f}\n"
+            f"   Center   : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"   Radius   : {self.radius:.3f}\n"
         )
 
         self.drag_x = event.xdata
@@ -310,6 +311,7 @@ class CalibrationGUI:
         self.patch_selected.set_radius(self.radius)
 
         self.str_var_info.set(
+            f"Center Depth: {self.unwrapped_phase[int(self.center_y)][int(self.center_x)]:.3f}\n"
             f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
             f"Radius : {self.radius:.3f}\n"
         )
@@ -375,9 +377,10 @@ class CalibrationGUI:
         self.patch_center = self.ax.add_patch(self.patch_center)
 
         self.str_var_info.set(
-            f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
-            f"Radius : {self.radius:.3f}\n"
-            f"Angle  : {self.angle}"
+            f"Center Depth: {self.unwrapped_phase[int(self.center_y)][int(self.center_x)]:.3f}\n"
+            f"   Center   : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"   Radius   : {self.radius:.3f}\n"
+            f"   Angle    : {self.angle}"
         )
 
         self.drag_x = event.xdata
@@ -400,9 +403,10 @@ class CalibrationGUI:
         self.patch_selected.orientation = self.angle
 
         self.str_var_info.set(
-            f"Center : ({self.center_x:.3f}, {self.center_y:.3f})\n"
-            f"Radius : {self.radius:.3f}\n"
-            f"Angle  : {self.angle}"
+            f"Center Depth: {self.unwrapped_phase[int(self.center_y)][int(self.center_x)]:.3f}\n"
+            f"   Center   : ({self.center_x:.3f}, {self.center_y:.3f})\n"
+            f"   Radius   : {self.radius:.3f}\n"
+            f"   Angle    : {self.angle}"
         )
 
         self.canvas.draw()

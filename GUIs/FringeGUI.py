@@ -384,6 +384,7 @@ class FringeGUI:
         # if self.plot is None:
         # # if main display is empty, we create new display
         self.plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
+        # print(self.curr_map[0][0])
 
         for value in self.patch_dict.values():
             if value is not None:
@@ -420,7 +421,7 @@ class FringeGUI:
 
         # print(f"x = {x}, y = {y}")
 
-        self.var_coord.set(f"x = {x}, y = {y}, value = {self.curr_map[int(x)][int(y)]}")
+        self.var_coord.set(f"x = {x}, y = {y}, value = {self.curr_map[int(y)][int(x)]}")
 
         self.canvas_main.draw()
 
@@ -546,7 +547,7 @@ class FringeGUI:
         hash_string = f'{self.x_cache}, {self.y_cache}'
 
         self.trv_track.insert('', 'end', hash_string,
-                              values=(self.x_cache, self.y_cache, f'{self.curr_map[self.x_cache][self.y_cache]:.5}'))
+                              values=(self.x_cache, self.y_cache, f'{self.curr_map[self.y_cache][self.x_cache]:.5}'))
         self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((self.x_cache, self.y_cache), 4,
                                                                      facecolor='none', edgecolor='black', fill=True))
 
