@@ -203,11 +203,29 @@ class CalibrationGUI:
         self.canvas.draw()
 
     def calibration(self):
+        (h, l) = self.unwrapped_phase.shape
+        print(f"{h}, {l}")
+        x = int(self.center_x)
+        y = int(self.center_y)
+        radius_square = self.radius ** 2
+        sum = 0
+        num = 0
+
+        for xx in range(x - int(self.radius) - 1, x + int(self.radius) + 2):
+            for yy in range(y - int(self.radius) - 1, y + int(self.radius) + 2):
+                if 0 <= xx < h and 0 <= yy < l and (xx - x) ** 2 + (yy - y) ** 2 > radius_square:
+                    sum += self.unwrapped_phase[yy][xx]
+                    num += 1
+
+        base = sum / num
+
+        print(base)
+
         if self.cbo_map.get() == "Circle":
-            self.ks = float(self.ent_input_2.get()) / self.unwrapped_phase[int(self.center_y)][int(self.center_x)]
+            self.ks = float(self.ent_input_2.get()) / (self.unwrapped_phase[y][x] - base)
             self.scale = float(self.ent_input_1.get()) / self.radius
         else:
-            self.ks = float(self.ent_input_2.get()) / self.unwrapped_phase[int(self.center_y)][int(self.center_x)]
+            self.ks = float(self.ent_input_2.get()) / (self.unwrapped_phase[y][x] - base)
             self.scale = float(self.ent_input_1.get()) / self.radius / math.sqrt(2)
 
         self.str_var_ks.set(
