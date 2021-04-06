@@ -15,6 +15,7 @@ from GUIs.ExportGUI import ExportGUI
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
 from GUIs.SettingsGUI import SettingsGUI
+from GUIs.TrackGUI import TrackGUI
 from utility.FringeAnalysisFunctions import *
 
 matplotlib.use('TkAgg')
@@ -544,12 +545,23 @@ class FringeGUI:
         """
             Add point into the tracking list
         """
-        hash_string = f'{self.x_cache}, {self.y_cache}'
+        # hash_string = f'{self.x_cache}, {self.y_cache}'
+        #
+        # self.trv_track.insert('', 'end', hash_string,
+        #                       values=(self.x_cache, self.y_cache, f'{self.curr_map[self.y_cache][self.x_cache]:.5}'))
+        # self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((self.x_cache, self.y_cache), 4,
+        #                                                              facecolor='none', edgecolor='black', fill=True))
+        track_gui = TrackGUI(self)
 
-        self.trv_track.insert('', 'end', hash_string,
-                              values=(self.x_cache, self.y_cache, f'{self.curr_map[self.y_cache][self.x_cache]:.5}'))
-        self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((self.x_cache, self.y_cache), 4,
-                                                                     facecolor='none', edgecolor='black', fill=True))
+        self.window.wait_window(track_gui.window)
+
+        if track_gui.is_valid:
+            hash_string = f'{track_gui.x}, {track_gui.y}'
+
+            self.trv_track.insert('', 'end', hash_string,
+                                  values=(track_gui.x, track_gui.y, f'{self.curr_map[track_gui.y][track_gui.x]:.5}'))
+            self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((track_gui.x, track_gui.y), 4,
+                                                                         facecolor='none', edgecolor='black', fill=True))
 
     def stop_track(self):
         """
