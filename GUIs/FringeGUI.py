@@ -14,6 +14,7 @@ from GUIs.CalibrationGUI import CalibrationGUI
 from GUIs.ExportGUI import ExportGUI
 from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
+from GUIs.RangeSettingGUI import RangeSettingGUI
 from GUIs.SettingsGUI import SettingsGUI
 from GUIs.TrackGUI import TrackGUI
 from utility.FringeAnalysisFunctions import *
@@ -58,6 +59,15 @@ class FringeGUI:
     patch_dict = {}
 
     # Store the max and min value from the curr_map for side plot display to set their boundary
+    obj_phase_maxv = None
+    obj_phase_minv = None
+    diff_phase_maxv = None
+    diff_phase_minv = None
+    unwrapped_phase_maxv = None
+    unwrapped_phase_minv = None
+    depth_map_maxv = None
+    depth_map_minv = None
+
     max_value = None
     min_value = None
 
@@ -112,11 +122,14 @@ class FringeGUI:
 
         # Creating right click menus
         self.right_click_menu = tk.Menu(master=self.window, tearoff=0)
+        self.right_click_menu.add_command(label="Set Value Range", command=self.set_range)
+        self.right_click_menu.add_separator()
         self.right_click_menu.add_command(label="Export as Image", command=self.export_image)
         self.right_click_menu.add_command(label="Export as CSV", command=self.export_csv)
 
         self.right_click_menu_all = tk.Menu(master=self.window, tearoff=0)
-        self.right_click_menu_all.add_command(label="Track This Point", command=self.track_point)
+        self.right_click_menu_all.add_command(label="Track Point", command=self.track_point)
+        self.right_click_menu_all.add_command(label="Set Value Range", command=self.set_range)
         self.right_click_menu_all.add_separator()
         self.right_click_menu_all.add_command(label="Export as Image", command=self.export_image)
         self.right_click_menu_all.add_command(label="Export as CSV", command=self.export_csv)
@@ -159,7 +172,7 @@ class FringeGUI:
         )
         self.cbo_map.current(0)
         self.btn_show = tk.Button(self.frm_right_upper, text='Show', command=self.draw)
-        self.btn_plot = tk.Button(self.frm_right_upper, text="Plot in 3D", command=self.plot3D)
+        self.btn_plot = tk.Button(self.frm_right_upper, text="Plot in 3D", command=self.plot3d)
 
         self.cbo_map.pack()
         self.btn_show.pack()
@@ -232,9 +245,15 @@ class FringeGUI:
 
         self.frm_track.grid(row=0, column=1, padx=5, pady=5, sticky=tk.NSEW)
 
-        self.frm_table = tk.Frame(master=self.frm_track)
+        self.frm_point = tk.Frame(master=self.frm_track)
+
+        self.lbl_point = tk.Label(master=self.frm_point, text="Tracking Table")
+        self.lbl_point.pack(fill=tk.BOTH, padx=5, pady=5)
+
+        self.frm_table = tk.Frame(master=self.frm_point)
 
         self.trv_track = ttk.Treeview(master=self.frm_table, columns=('x', 'y', 'value'))
+        # self.trv_track = ttk.Treeview(master=self.frm_table, columns=('x', 'y', 'value', 'roi'))
         self.vsb_track = tk.Scrollbar(master=self.frm_table, orient='vertical', command=self.trv_track.yview)
         self.trv_track.configure(yscrollcommand=self.vsb_track.set)
 
@@ -245,16 +264,19 @@ class FringeGUI:
         self.trv_track.column("y", anchor='c', width=64)
         self.trv_track.heading("value", text='value')
         self.trv_track.column("value", anchor='c', width=128)
+        # self.trv_track.column('roi', stretch=tk.NO, minwidth=0, width=0)
 
-        self.trv_track.pack(side='left', fill='y', expand=True)
-        self.vsb_track.pack(side='right', fill='both', expand=True)
+        self.trv_track.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.vsb_track.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        self.frm_table.pack(fill='both', expand=True)
+        self.frm_table.pack(fill=tk.BOTH, expand=True)
 
-        self.btn_stop_track = tk.Button(master=self.frm_track, text='Delete Point(s)', command=self.stop_track)
+        self.btn_stop_track = tk.Button(master=self.frm_point, text=' Delete ', command=self.stop_track)
         self.btn_stop_track.pack(side=tk.LEFT, pady=5)
-        self.btn_track = tk.Button(master=self.frm_track, text='Export..', command=self.export_points)
+        self.btn_track = tk.Button(master=self.frm_point, text='Export..', command=self.export_points)
         self.btn_track.pack(side=tk.RIGHT, padx=5, pady=5)
+
+        self.frm_point.pack(fill=tk.Y, expand=True)
 
         self.var_coord = tk.StringVar()
         self.lbl_coord = tk.Label(master=self.window, textvariable=self.var_coord, relief="sunken")
@@ -304,8 +326,7 @@ class FringeGUI:
         self.window.title(f"Fringe Analysis Prototype - Processing {self.counter}/{self.num_img}")
 
         if self.using_multithreading and self.num_img > self.num_threads:
-            handler = MultiProcessHandler()
-            self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = handler.analyze_mp(
+            self.obj_phase, self.diff_phase, self.unwrapped_phase, self.depth_map = MultiProcessHandler.analyze_mp(
                 self.ref_phase,
                 obj_img,
                 self.num_img,
@@ -323,6 +344,11 @@ class FringeGUI:
                 self.pitch
             )
 
+        # self.obj_phase_minv, self.obj_phase_maxv = find_range_from_maps(self.obj_phase)
+        # self.diff_phase_minv, self.diff_phase_maxv = find_range_from_maps(self.diff_phase)
+        # self.unwrapped_phase_minv, self.unwrapped_phase_maxv = find_range_from_maps(self.unwrapped_phase)
+        # self.depth_map_minv, self.depth_map_maxv = find_range_from_maps(self.depth_map)
+
         self.window.title("Fringe Analysis Prototype - Done!")
 
     def draw(self, _=None):
@@ -339,17 +365,22 @@ class FringeGUI:
 
         if selected_map == 'Object Surface Contour':
             self.curr_map = self.depth_map[self.scl_main.get() - 1]
+            self.max_value = self.depth_map_maxv
+            self.min_value = self.depth_map_minv
         elif selected_map == 'Quality Map':
             return
         elif selected_map == 'Wrapped Phase Map':
             self.curr_map = self.diff_phase[self.scl_main.get() - 1]
+            self.max_value = self.diff_phase_maxv
+            self.min_value = self.diff_phase_minv
         elif selected_map == 'Object Phase':
             self.curr_map = self.obj_phase[self.scl_main.get() - 1]
+            self.max_value = self.obj_phase_maxv
+            self.min_value = self.obj_phase_minv
         elif selected_map == 'Reference Phase':
             self.curr_map = self.ref_phase
-
-        self.max_value = max([max(i) for i in self.curr_map])
-        self.min_value = min([min(i) for i in self.curr_map])
+            self.max_value = max([max(i) for i in self.curr_map])
+            self.min_value = min([min(i) for i in self.curr_map])
 
         if not self.ax_added:
             # if axes are not already set, we create them here and set up function binding
@@ -384,7 +415,7 @@ class FringeGUI:
 
         # if self.plot is None:
         # # if main display is empty, we create new display
-        self.plot = self.ax_main.imshow(self.curr_map, cmap=cm.turbo)
+        self.plot = self.ax_main.imshow(self.curr_map, vmax=self.max_value, vmin=self.min_value, cmap=cm.turbo)
         # print(self.curr_map[0][0])
 
         for value in self.patch_dict.values():
@@ -412,6 +443,8 @@ class FringeGUI:
         self.canvas_left.draw()
 
     def onmove_main(self, event):
+        # print(event)
+
         if not event.inaxes:
             return
 
@@ -436,46 +469,49 @@ class FringeGUI:
         # print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
         #       ('double' if event.dblclick else 'single', event.button,
         #        event.x, event.y, event.xdata, event.ydata))
+        print(event)
+
         if event.xdata is None or event.ydata is None:
             pass
 
         if event.button == 1:
-            height = len(self.curr_map)
-            width = len(self.curr_map[0])
+            if event.dblclick:
+                height = len(self.curr_map)
+                width = len(self.curr_map[0])
 
-            # print(f"h = {height}, w = {width}")
+                # print(f"h = {height}, w = {width}")
 
-            x_offset = 0
-            y_offset = 0
+                x_offset = 0
+                y_offset = 0
 
-            if height > width:
-                x_offset = (height - width) / 2
-            elif height < width:
-                y_offset = (width - height) / 2
+                if height > width:
+                    x_offset = (height - width) / 2
+                elif height < width:
+                    y_offset = (width - height) / 2
 
-            x = self.curr_map[:, int(event.xdata)]
-            y = self.curr_map[int(event.ydata), :]
-            axis_x = [i for i in range(len(x))]
-            axis_y = [i for i in range(len(y))]
+                x = self.curr_map[:, int(event.xdata)]
+                y = self.curr_map[int(event.ydata), :]
+                axis_x = [i for i in range(len(x))]
+                axis_y = [i for i in range(len(y))]
 
-            self.ax_upper.clear()
-            self.ax_right.clear()
+                self.ax_upper.clear()
+                self.ax_right.clear()
 
-            self.ax_upper.plot(axis_y, y)
-            self.ax_right.plot(x, axis_x)
+                self.ax_upper.plot(axis_y, y)
+                self.ax_right.plot(x, axis_x)
 
-            self.ax_upper.set_xlabel('x axis')
-            self.ax_upper.set_ylabel('depth')
-            self.ax_upper.set_xlim((- x_offset, x_offset + len(y) - 1))
-            self.ax_upper.set_ylim((self.min_value, self.max_value))
+                self.ax_upper.set_xlabel('x axis')
+                self.ax_upper.set_ylabel('depth')
+                self.ax_upper.set_xlim((- x_offset, x_offset + len(y) - 1))
+                self.ax_upper.set_ylim((self.min_value, self.max_value))
 
-            self.ax_right.set_xlabel('depth')
-            self.ax_right.set_ylabel('y axis')
-            self.ax_right.set_xlim((self.min_value, self.max_value))
-            self.ax_right.set_ylim((y_offset + len(x) - 1, - y_offset))
+                self.ax_right.set_xlabel('depth')
+                self.ax_right.set_ylabel('y axis')
+                self.ax_right.set_xlim((self.min_value, self.max_value))
+                self.ax_right.set_ylim((y_offset + len(x) - 1, - y_offset))
 
-            self.canvas_upper.draw()
-            self.canvas_right.draw()
+                self.canvas_upper.draw()
+                self.canvas_right.draw()
 
         elif event.button == 3:
             selected_map = self.cbo_map.get()
@@ -541,6 +577,29 @@ class FringeGUI:
 
             self.window.wait_window(export_gui.window)
 
+    def set_range(self):
+        """
+            Set a range for the color bar
+        """
+        range_gui = RangeSettingGUI(self)
+
+        self.window.wait_window(range_gui.window)
+
+        if range_gui.is_valid:
+            selected_map = self.cbo_map.get()
+
+            if selected_map == 'Object Surface Contour':
+                self.depth_map_maxv = range_gui.max_value
+                self.depth_map_minv = range_gui.min_value
+            elif selected_map == 'Wrapped Phase Map':
+                self.diff_phase_maxv = range_gui.max_value
+                self.diff_phase_minv = range_gui.min_value
+            elif selected_map == 'Object Phase':
+                self.obj_phase_maxv = range_gui.max_value
+                self.obj_phase_minv = range_gui.min_value
+
+            self.draw()
+
     def track_point(self):
         """
             Add point into the tracking list
@@ -561,7 +620,8 @@ class FringeGUI:
             self.trv_track.insert('', 'end', hash_string,
                                   values=(track_gui.x, track_gui.y, f'{self.curr_map[track_gui.y][track_gui.x]:.5}'))
             self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((track_gui.x, track_gui.y), 4,
-                                                                         facecolor='none', edgecolor='black', fill=True))
+                                                                         facecolor='none', edgecolor='black',
+                                                                         fill=True))
 
     def stop_track(self):
         """
@@ -625,7 +685,7 @@ class FringeGUI:
             self.scl_main.configure(from_=1, to=len(self.obj_file))
             self.draw()
 
-    def plot3D(self):
+    def plot3d(self):
         """
             Opens a new UI displaying 3D plot of the current map
         """
@@ -682,7 +742,8 @@ class FringeGUI:
 
 
 class MultiProcessHandler:
-    def analyze_mp(self, ref_phase, obj_img, num_img, num_threads, ks, pitch):
+    @staticmethod
+    def analyze_mp(ref_phase, obj_img, num_img, num_threads, ks, pitch):
         obj_number_per_thread = int(num_img / num_threads)
         future_list = []
 

@@ -216,3 +216,17 @@ def find_range(input_map):
                 max_value = elem
 
     return min_value, max_value
+
+
+def find_range_from_maps(input_maps):
+    min_value = float('inf')
+    max_value = -float('inf')
+
+    for phase_map in input_maps:
+        temp_min, temp_max = find_range(phase_map)
+        if temp_min < min_value:
+            min_value = temp_min
+        if temp_max > max_value:
+            max_value = temp_max
+
+    return min_value, max_value

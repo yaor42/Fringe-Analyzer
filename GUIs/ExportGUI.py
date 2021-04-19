@@ -103,7 +103,7 @@ class ExportGUI:
         fig = Figure(figsize=(5, 3), dpi=100)
         ax = fig.add_subplot(111)
 
-        fig.colorbar(ax.imshow(map, cmap=cm.turbo))
+        fig.colorbar(ax.imshow(map, vmax=self.root.max_value, vmin=self.root.min_value, cmap=cm.turbo))
 
         fig.savefig(full_dir)
 
