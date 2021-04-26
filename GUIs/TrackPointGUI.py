@@ -45,6 +45,8 @@ class TrackPointGUI:
 
         self.frm_button.pack()
 
+        self.window.resizable(False, False)
+
     def cancel(self):
         self.window.destroy()
 

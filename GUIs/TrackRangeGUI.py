@@ -106,6 +106,8 @@ class TrackRangeGUI:
 
         self.draw()
 
+        self.window.resizable(False, False)
+
     def draw(self):
         if self.patch is not None:
             self.patch.remove()

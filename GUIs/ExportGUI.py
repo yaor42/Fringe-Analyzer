@@ -170,7 +170,7 @@ class ExportGUI:
                 y = int(coord[1])
 
                 data = np.array([depth_map[y][x] for depth_map in map_list])
-
+                self.window.resizable(False, False)
                 full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{x},{y}" \
                            f"{self.string_var_filetype.get()}"
                 np.savetxt(full_dir, data, delimiter=", ")

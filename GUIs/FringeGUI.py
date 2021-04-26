@@ -130,7 +130,7 @@ class FringeGUI:
 
         self.right_click_menu_all = tk.Menu(master=self.window, tearoff=0)
         self.right_click_menu_all.add_command(label="Track Point", command=self.track_point)
-        self.right_click_menu_all.add_command(label="Track Range", command=self.track_range)
+        self.right_click_menu_all.add_command(label="Track ROI", command=self.track_range)
         self.right_click_menu_all.add_command(label="Set Value Range", command=self.set_range)
         self.right_click_menu_all.add_separator()
         self.right_click_menu_all.add_command(label="Export as Image", command=self.export_image)
