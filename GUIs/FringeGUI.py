@@ -8,7 +8,7 @@ import matplotlib
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Rectangle
 
 from GUIs.CalibrationGUI import CalibrationGUI
 from GUIs.ExportGUI import ExportGUI
@@ -16,7 +16,8 @@ from GUIs.FileSelectionGUI import FileSelectionGui
 from GUIs.PlotGUI import PlotGUI
 from GUIs.RangeSettingGUI import RangeSettingGUI
 from GUIs.SettingsGUI import SettingsGUI
-from GUIs.TrackGUI import TrackGUI
+from GUIs.TrackPointGUI import TrackPointGUI
+from GUIs.TrackRangeGUI import TrackRangeGUI
 from utility.FringeAnalysisFunctions import *
 
 matplotlib.use('TkAgg')
@@ -53,8 +54,8 @@ class FringeGUI:
     plot = None
     lx = None
     ly = None
-    x_cache = 0
-    y_cache = 0
+    cache_x = 0
+    cache_y = 0
 
     patch_dict = {}
 
@@ -129,6 +130,7 @@ class FringeGUI:
 
         self.right_click_menu_all = tk.Menu(master=self.window, tearoff=0)
         self.right_click_menu_all.add_command(label="Track Point", command=self.track_point)
+        self.right_click_menu_all.add_command(label="Track Range", command=self.track_range)
         self.right_click_menu_all.add_command(label="Set Value Range", command=self.set_range)
         self.right_click_menu_all.add_separator()
         self.right_click_menu_all.add_command(label="Export as Image", command=self.export_image)
@@ -425,15 +427,32 @@ class FringeGUI:
         self.patch_dict = {}
 
         for item in self.trv_track.get_children():
-            coord = item.split(',')
+            strs = item.split(' ')
+            if strs[0] == 'point':
+                coord = strs[1].split(',')
 
-            x = int(coord[0])
-            y = int(coord[1])
+                x = int(coord[0])
+                y = int(coord[1])
 
-            self.trv_track.delete(item)
-            self.trv_track.insert('', 'end', f'{x}, {y}', values=(x, y, f'{self.curr_map[x][y]:.5}'))
-            self.patch_dict[f'{x}, {y}'] = self.ax_main.add_patch(Circle((x, y), 4, facecolor='none',
-                                                                         edgecolor='black', fill=True))
+                self.trv_track.delete(item)
+                self.trv_track.insert('', 'end', f'point {x},{y}', values=(x, y, f'{self.curr_map[x][y]:.5}'))
+                self.patch_dict[f'point {x},{y}'] = self.ax_main.add_patch(Circle((x, y), 4, facecolor='none',
+                                                                             edgecolor='black', fill=True))
+            else:
+                coord = strs[1].split(',')
+
+                x1 = int(coord[0])
+                y1 = int(coord[1])
+                x2 = int(coord[2])
+                y2 = int(coord[3])
+
+                self.trv_track.delete(item)
+                self.trv_track.insert('', 'end', f'range {x1},{y1},{x2},{y2}',
+                                      values=(f'{x1} - {x2}', f'{y1} - {y2}', '-'))
+
+                self.patch_dict[f'range {x1},{y1},{x2},{y2}'] = self.ax_main.add_patch(
+                    Rectangle((x1, y2), width=x2 - x1, height=y1 - y2, facecolor='none', edgecolor='black')
+                )
 
         # Create new color bar for current data
         self.fig_left.colorbar(self.plot, cax=self.ax_left)
@@ -525,8 +544,8 @@ class FringeGUI:
                 finally:
                     self.right_click_menu.grab_release()
             else:
-                self.x_cache = int(event.xdata)
-                self.y_cache = int(event.ydata)
+                self.cache_x = int(event.xdata)
+                self.cache_y = int(event.ydata)
 
                 try:
                     self.right_click_menu_all.tk_popup(
@@ -610,12 +629,12 @@ class FringeGUI:
         #                       values=(self.x_cache, self.y_cache, f'{self.curr_map[self.y_cache][self.x_cache]:.5}'))
         # self.patch_dict[hash_string] = self.ax_main.add_patch(Circle((self.x_cache, self.y_cache), 4,
         #                                                              facecolor='none', edgecolor='black', fill=True))
-        track_gui = TrackGUI(self)
+        track_gui = TrackPointGUI(self)
 
         self.window.wait_window(track_gui.window)
 
         if track_gui.is_valid:
-            hash_string = f'{track_gui.x}, {track_gui.y}'
+            hash_string = f'point {track_gui.x},{track_gui.y}'
 
             self.trv_track.insert('', 'end', hash_string,
                                   values=(track_gui.x, track_gui.y, f'{self.curr_map[track_gui.y][track_gui.x]:.5}'))
@@ -623,16 +642,36 @@ class FringeGUI:
                                                                          facecolor='none', edgecolor='black',
                                                                          fill=True))
 
+    def track_range(self):
+        track_gui = TrackRangeGUI(self)
+
+        self.window.wait_window(track_gui.window)
+
+        if track_gui.is_valid:
+            hash_string = f'range {track_gui.x1},{track_gui.y1},{track_gui.x2},{track_gui.y2}'
+
+            self.trv_track.insert('', 'end', hash_string,
+                                  values=(f'{track_gui.x1} - {track_gui.x2}', f'{track_gui.y1} - {track_gui.y2}', '-'))
+            self.patch_dict[hash_string] = self.ax_main.add_patch(
+                Rectangle(
+                    (track_gui.x1, track_gui.y2),
+                    width=track_gui.x2 - track_gui.x1,
+                    height=track_gui.y1 - track_gui.y2,
+                    facecolor='none',
+                    edgecolor='black'
+                )
+            )
+
     def stop_track(self):
         """
             Delete the point selected from the tracking list
         """
         selection = self.trv_track.selection()
 
-        for point in selection:
-            self.patch_dict[point].remove()
-            self.patch_dict[point] = None
-            self.trv_track.delete(point)
+        for item in selection:
+            self.patch_dict[item].remove()
+            self.patch_dict[item] = None
+            self.trv_track.delete(item)
 
         self.canvas_main.draw()
 

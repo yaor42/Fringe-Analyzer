@@ -72,7 +72,7 @@ class ExportGUI:
         self.btn_save.grid(row=1, column=1, padx=5, pady=5)
 
         if track:
-            self.btn_save.configure(command=self.track_point)
+            self.btn_save.configure(command=self.track)
         elif filetype == "image":
             if export_all:
                 self.btn_save.configure(command=self.save_image_all)
@@ -157,20 +157,41 @@ class ExportGUI:
 
         self.cancel()
 
-    def track_point(self):
+    def track(self):
         map_list = self.root.depth_map
         tracking_list = self.root.trv_track.get_children()
 
         for item in tracking_list:
-            coord = item.split(',')
+            strs = item.split(' ')
+            if strs[0] == 'point':
+                coord = strs[1].split(',')
 
-            x = int(coord[0])
-            y = int(coord[1])
+                x = int(coord[0])
+                y = int(coord[1])
 
-            data = np.array([depth_map[y][x] for depth_map in map_list])
+                data = np.array([depth_map[y][x] for depth_map in map_list])
 
-            full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{x},{y}" \
-                       f"{self.string_var_filetype.get()}"
-            np.savetxt(full_dir, data, delimiter=", ")
+                full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{x},{y}" \
+                           f"{self.string_var_filetype.get()}"
+                np.savetxt(full_dir, data, delimiter=", ")
+            else:
+                print(strs)
+                coord = strs[1].split(',')
+                print(coord)
+                x1 = int(coord[0])
+                y1 = int(coord[1])
+                x2 = int(coord[2])
+                y2 = int(coord[3])
+
+                dmap = map_list[0]
+
+                print(dmap[y1:y2, x1:x2])
+                print(len(dmap[y1:y2, x1:x2]))
+                print(len(dmap[y1:y2, x1:x2][0]))
+
+                data = np.array([depth_map[y1:y2, x1:x2].flatten() for depth_map in map_list])
+                full_dir = f"{self.string_var_dir.get()}/{self.string_var_filename.get()}-{x1},{y1}-{x2},{y2}" \
+                           f"{self.string_var_filetype.get()}"
+                np.savetxt(full_dir, data, delimiter=", ")
 
         self.cancel()

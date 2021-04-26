@@ -133,8 +133,8 @@ class CalibrationGUI:
         self.btn_cancel = tk.Button(master=self.frm_submit, text="Cancel", command=self.cancel)
         self.btn_submit = tk.Button(master=self.frm_submit, text="Submit", command=self.submit)
 
-        self.btn_cancel.grid(row=0, column=0, ipadx=5, ipady=5, padx=5, pady=5)
-        self.btn_submit.grid(row=0, column=1, ipadx=5, ipady=5, padx=5, pady=5)
+        self.btn_cancel.grid(row=0, column=0, ipadx=5, ipady=5, padx=5)
+        self.btn_submit.grid(row=0, column=1, ipadx=5, ipady=5, padx=5)
 
         self.frm_submit.grid(row=1, column=1, ipadx=5, ipady=5)
 
@@ -177,11 +177,10 @@ class CalibrationGUI:
         self.draw()
 
     def draw(self):
-        if self.ax is None:
-            self.ax = self.fig.add_subplot(111)
-        else:
+        if self.ax is not None:
             self.ax.remove()
-            self.ax = self.fig.add_subplot(111)
+
+        self.ax = self.fig.add_subplot(111)
 
         if self.cbo_display.get() == 'Original Image':
             self.plot = self.ax.imshow(self.obj_image, cmap=cm.gray)

@@ -1,7 +1,7 @@
 import tkinter as tk
 
 
-class TrackGUI:
+class TrackPointGUI:
     x = 0
     y = 0
 
@@ -10,8 +10,8 @@ class TrackGUI:
     def __init__(self, root):
         self.root = root
 
-        self.x = self.root.x_cache
-        self.y = self.root.y_cache
+        self.x = self.root.cache_x
+        self.y = self.root.cache_y
 
         self.var_x = tk.IntVar()
         self.var_y = tk.IntVar()
